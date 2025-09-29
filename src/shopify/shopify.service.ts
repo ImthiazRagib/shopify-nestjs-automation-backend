@@ -1,19 +1,39 @@
+import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class ShopifyService {
 
-    // constructor() {
-    //     const store = process.env.SHOPIFY_STORE;
-    //     const version = process.env.SHOPIFY_API_VERSION;
-    //     this.baseUrl = `https://${store}/admin/api/${version}`;
-    //     this.headers = {
-    //         'X-Shopify-Access-Token': process.env.SHOPIFY_TOKEN,
-    //         'Content-Type': 'application/json',
-    //     };
-    // }
+    constructor(
+        private readonly httpService: HttpService
+    ) {
+    }
+
+    async getHttpResponse(endpoint: string, payload?: object, headers?: object) {
+        const store = process.env.SHOPIFY_STORE;
+        const version = process.env.SHOPIFY_API_VERSION;
+        const baseUrl = `https://${store}.myshopify.com/admin/api/${version}`;
+        headers = {
+            ...headers,
+            'X-Shopify-Access-Token': process.env.SHOPIFY_ADMIN_ACCESS_TOKEN,
+            'Content-Type': 'application/json',
+        };
+
+        const response: any = await firstValueFrom(
+            this.httpService.get(baseUrl as string),
+        );
+
+        return response.data
+    }
+    async getUsersShopifyProducts() {
+        const products = await this.getHttpResponse('dummy')
+        return products;
+    }
+    async getUsersShopifyOrders() { }
 
     async getProducts() {
+        return await this.getUsersShopifyProducts()
         return [
             {
                 id: 123456789,
