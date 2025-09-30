@@ -7,6 +7,7 @@ import {
     IsIn,
     IsInt,
     IsBoolean,
+    IsNotEmpty,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { MediaType } from '../enum';
@@ -162,8 +163,27 @@ class ProductMediaDto {
     query?: string;
 }
 
+class ProductImageDto {
+    @ApiProperty({ example: 'https://cdn.shopify.com/s/files/1/1234/5678/products/tshirt.jpg', description: 'Image source URL' })
+    @IsString()
+    src: string;
 
-export class ShopifyProductDto {
+    @ApiProperty({ example: 1, description: 'Position of the image in the list' })
+    @IsInt()
+    position: number;
+}
+
+class ProductImagesArrayDto {
+    @ApiProperty({ type: [ProductImageDto], description: 'Array of product images with src and position' })
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => ProductImageDto)
+    images: { src: string; position: number }[];
+}
+
+
+export class AddShopifyProductDto {
+    @IsNotEmpty()
     @ApiProperty({ example: 'Elegant Cotton T-Shirt' })
     @IsString()
     title: string;
@@ -192,14 +212,20 @@ export class ShopifyProductDto {
     @IsInt()
     totalInventory: number;
 
+    @ApiProperty({ type: ProductImagesArrayDto, description: 'Product images' })
+    @ValidateNested()
+    @Type(() => ProductImagesArrayDto)
+    images: ProductImagesArrayDto;
+
     @ApiProperty({ example: true, description: 'Whether inventory is tracked' })
     @IsBoolean()
     tracksInventory: boolean;
 
-    @ApiProperty({ type: ProductCategoryDto, description: 'Product category' })
-    @ValidateNested()
+    @ApiProperty({ type: [ProductCategoryDto], description: 'Product categories' })
+    @IsArray()
+    @ValidateNested({ each: true })
     @Type(() => ProductCategoryDto)
-    category: ProductCategoryDto;
+    categories: ProductCategoryDto[];
 
     @ApiProperty({ type: [ProductCollectionDto], description: 'Collections this product belongs to' })
     @ValidateNested({ each: true })

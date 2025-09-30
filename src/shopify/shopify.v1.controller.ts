@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ShopifyService } from './shopify.service';
-import { ShopifyProductDto } from './dto/shopify.products.dto';
+import { AddShopifyProductDto } from './dto/shopify.products.dto';
 
 @Controller('v1/shopify')
 export class ShopifyControllerV1 {
@@ -9,13 +9,28 @@ export class ShopifyControllerV1 {
     ) { }
 
     @Post('products/create')
-    createProduct(@Body() payload: ShopifyProductDto) {
+    createProduct(@Body() payload: AddShopifyProductDto) {
         return this.shopifyService.createProduct(payload);
     }
 
     @Get('products')
     getProducts() {
         return this.shopifyService.getProducts();
+    }
+
+    @Get('custom-collections')
+    getCustomCollections() {
+        return this.shopifyService.getCustomCollections();
+    }
+
+    @Get('smart-collections')
+    getSmartCollections() {
+        return this.shopifyService.getSmartCollections();
+    }
+
+    @Get('product-types')
+    getProductTypes() {
+        return this.shopifyService.getProductTypes();
     }
 
     @Get('orders')

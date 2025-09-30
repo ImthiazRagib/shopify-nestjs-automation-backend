@@ -2,7 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import axios from 'axios';
 import { firstValueFrom } from 'rxjs';
-import { ShopifyProductDto } from './dto/shopify.products.dto';
+import { AddShopifyProductDto } from './dto/shopify.products.dto';
 
 @Injectable()
 export class ShopifyService {
@@ -42,8 +42,8 @@ export class ShopifyService {
             );
         }
     }
-
-    async createProduct(payload: ShopifyProductDto) {
+    // * Products
+    async createProduct(payload: AddShopifyProductDto) {
         try {
             const product = {
                 product: {
@@ -75,6 +75,21 @@ export class ShopifyService {
 
     async getProducts() {
         return await this.getUsersShopifyProducts()
+    }
+
+    async getProductTypes() {
+        const types = await this.getHttpResponse('/products.json?fields=product_type')
+
+        return types?.products?.map(p => p.product_type)
+    }
+
+    //* COLLECTIONS/CATEGORIES
+    async getCustomCollections() {
+        return await this.getHttpResponse('/custom_collections.json')
+    }
+
+    async getSmartCollections() {
+        return await this.getHttpResponse('/smart_collections.json')
     }
 
     //* ORDERS
