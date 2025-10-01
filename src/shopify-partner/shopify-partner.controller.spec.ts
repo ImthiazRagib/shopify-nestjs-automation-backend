@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ShopifyPartnerController } from './shopify-partner.controller';
+import { ShopifyPartnerController } from './shopify-partner.v1.controller';
 
 describe('ShopifyPartnerController', () => {
   let controller: ShopifyPartnerController;

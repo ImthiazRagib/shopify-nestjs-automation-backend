@@ -5,6 +5,7 @@ import { ShopifyModule } from './shopify/shopify.module';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { ShopifyPartnerModule } from './shopify-partner/shopify-partner.module';
+import { ShopifyStorefrontModule } from './shopify-storefront/shopify-storefront.module';
 
 @Module({
   imports: [    // Load .env globally
@@ -13,7 +14,8 @@ import { ShopifyPartnerModule } from './shopify-partner/shopify-partner.module';
     }),
     ShopifyModule,
     AuthModule,
-    ShopifyPartnerModule
+    ShopifyPartnerModule,
+    ShopifyStorefrontModule
   ],
   controllers: [AppController],
   providers: [AppService],
