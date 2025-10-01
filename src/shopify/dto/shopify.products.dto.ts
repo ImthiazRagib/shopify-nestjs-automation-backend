@@ -24,6 +24,14 @@ class ProductVariantDto {
     @ApiProperty({ example: 'TSHIRT-SM' })
     @IsString()
     sku: string;
+
+    @ApiProperty({ example: 'shopify', description: 'Inventory management system' })
+    @IsString()
+    inventory_management: string;
+
+    @ApiProperty({ example: 10, description: 'Inventory quantity' })
+    @IsInt()
+    inventory_quantity: number;
 }
 
 class ProductOptionDto {
@@ -183,6 +191,75 @@ class ProductImagesArrayDto {
 
 
 export class AddShopifyProductDto {
+    @IsNotEmpty()
+    @ApiProperty({ example: 'Elegant Cotton T-Shirt' })
+    @IsString()
+    title: string;
+
+    @ApiProperty({
+        example: '<strong>Soft, durable, and stylish.</strong>',
+        description: 'HTML description for product',
+    })
+    @IsString()
+    body_html: string;
+
+    @ApiProperty({ example: 'Imthiaz Apparel' })
+    @IsString()
+    vendor: string;
+
+    @ApiProperty({ example: 'T-Shirts' })
+    @IsString()
+    product_type: string;
+
+    @ApiProperty({ example: ['cotton', 'unisex', 'summer'], type: [String] })
+    @IsArray()
+    @IsString({ each: true })
+    tags: string[];
+
+    @ApiProperty({ example: 100, description: 'Total inventory count' })
+    @IsInt()
+    totalInventory: number;
+
+    @ApiProperty({ type: ProductImagesArrayDto, description: 'Product images' })
+    @ValidateNested()
+    @Type(() => ProductImagesArrayDto)
+    images: ProductImagesArrayDto;
+
+    @ApiProperty({ example: true, description: 'Whether inventory is tracked' })
+    @IsBoolean()
+    tracksInventory: boolean;
+
+    @ApiProperty({ type: [ProductCategoryDto], description: 'Product categories' })
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => ProductCategoryDto)
+    categories: ProductCategoryDto[];
+
+    @ApiProperty({ type: [ProductCollectionDto], description: 'Collections this product belongs to' })
+    @ValidateNested({ each: true })
+    @Type(() => ProductCollectionDto)
+    collections: ProductCollectionDto[];
+
+    @ApiProperty({ type: [ProductVariantDto] })
+    @ValidateNested({ each: true })
+    @Type(() => ProductVariantDto)
+    variants: ProductVariantDto[];
+
+    @ApiProperty({ type: [ProductOptionDto] })
+    @ValidateNested({ each: true })
+    @Type(() => ProductOptionDto)
+    options: ProductOptionDto[];
+
+    @ApiProperty({
+        example: 'active',
+        enum: ['active', 'draft', 'archived'],
+        description: 'Shopify product status',
+    })
+    @IsIn(['active', 'draft', 'archived'])
+    status: string;
+}
+
+export class UpdateShopifyProductDto {
     @IsNotEmpty()
     @ApiProperty({ example: 'Elegant Cotton T-Shirt' })
     @IsString()

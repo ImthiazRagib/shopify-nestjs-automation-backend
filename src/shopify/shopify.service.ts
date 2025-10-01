@@ -37,8 +37,8 @@ export class ShopifyService {
             return response.data
         } catch (error) {
             throw new HttpException(
-                error.response?.data || error.message || 'Shopify API error',
-                error.response?.status || HttpStatus.BAD_REQUEST,
+                error.message || 'Shopify API error',
+                error.status || HttpStatus.BAD_REQUEST,
             );
         }
     }
@@ -68,6 +68,53 @@ export class ShopifyService {
         }
     }
 
+    async updateProduct(productId: number, payload: any) {
+        try {
+            await this.getSingleProduct(productId);
+            const _payload = { product: { id: productId, ...payload } };
+
+            const res = await axios.put(
+                `${this.baseUrl}/products/${productId}.json`,
+                _payload,
+                { headers: this.headers },
+            );
+            return res.data;
+        } catch (error) {
+            console.log(error);
+            throw new HttpException(
+                error.response?.data?.errors
+                    ? { errors: error.response.data.errors, message: error.message }
+                    : { message: 'Failed to update product' },
+                error.response?.status || HttpStatus.BAD_REQUEST
+            );
+        }
+    }
+
+    async deleteProduct(productId: number) {
+        try {
+            await this.getSingleProduct(productId);
+            const url = `${this.baseUrl}/products/${productId}.json`;
+
+            const res = await axios.delete(url, {
+                headers: this.headers,
+            });
+
+            return {
+                success: true,
+                message: `Product ${productId} deleted successfully`,
+                status: res.status,
+            };
+        } catch (error) {
+            console.error('Shopify Delete Error:', error.response?.data || error.message);
+
+            throw new HttpException(
+                { message: error.message || 'Failed to delete product' },
+                error.status || HttpStatus.BAD_REQUEST
+            );
+        }
+    }
+
+
     async getUsersShopifyProducts() {
         const products = await this.getHttpResponse('/products.json')
         return products;
@@ -75,6 +122,18 @@ export class ShopifyService {
 
     async getProducts() {
         return await this.getUsersShopifyProducts()
+    }
+
+    async getSingleProduct(productId: number) {
+        try {
+            const product = await this.getHttpResponse(`/products/${productId}.json`);
+            return product;
+        } catch (error) {
+            throw new HttpException(
+                 error.message || 'Failed to fetch product',
+                 error.status || HttpStatus.BAD_REQUEST
+            );
+        }
     }
 
     async getProductTypes() {
@@ -106,5 +165,11 @@ export class ShopifyService {
     async getAllStores() {
         const allstores = await this.getHttpResponse('/shop.json')
         return allstores;
+    }
+
+    //* LOCATIONS
+    async getAllLocations() {
+        const allLocations = await this.getHttpResponse('/locations.json')
+        return allLocations;
     }
 }
