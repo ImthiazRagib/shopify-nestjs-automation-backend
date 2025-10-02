@@ -3,7 +3,7 @@ import axios from 'axios';
 
 @Injectable()
 export class ShopifyStorefrontService {
-  private readonly baseUrl = `https://${process.env.SHOPIFY_STOREFRONT_DOMAIN}/api/2025-04/graphql.json`;
+  private readonly baseUrl = `https://${process.env.SHOPIFY_STOREFRONT_DOMAIN}/api/2025-07/graphql.json`;
   private readonly headers = {
     'Content-Type': 'application/json',
     'X-Shopify-Storefront-Access-Token': process.env.SHOPIFY_STOREFRONT_TOKEN,
@@ -12,7 +12,7 @@ export class ShopifyStorefrontService {
   /**
    * Fetch products from Storefront API
    */
-  async getProducts(limit = 5) {
+  async getProducts(limit = 10) {
     const query = `
       query getProducts($limit: Int!) {
         products(first: $limit) {
@@ -111,5 +111,21 @@ export class ShopifyStorefrontService {
         error.response?.status || HttpStatus.BAD_REQUEST,
       );
     }
+  }
+
+  async getShopInfo() {
+    const query = `
+      {
+        shop {
+          name
+          primaryDomain {
+            url
+          }
+        }
+      }
+    `;
+
+    const response = await axios.post(this.baseUrl, { query }, { headers: this.headers });
+    return response.data;
   }
 }
