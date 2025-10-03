@@ -105,9 +105,10 @@ export class ShopifyPartnerService {
         { headers: this.headers },
       );
 
-      const data = response.data?.data?.organizations;
+      const data = response//.data?.data?.organizations;
       return data || { message: 'No organizations found' };
     } catch (error) {
+      console.log("🚀 ~ ShopifyPartnerService ~ getOrganizations ~ error:", error)
       console.error('Partner API error:', error.response?.data || error.message);
       throw new HttpException(
         error.response?.data || { message: 'Failed to fetch data' },

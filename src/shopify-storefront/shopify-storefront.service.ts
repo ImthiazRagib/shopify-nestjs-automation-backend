@@ -3,7 +3,7 @@ import axios from 'axios';
 
 @Injectable()
 export class ShopifyStorefrontService {
-  private readonly baseUrl = `https://${process.env.SHOPIFY_STOREFRONT_DOMAIN}/api/2025-07/graphql.json`;
+  private readonly baseUrl = `https://${process.env.SHOPIFY_STOREFRONT_DOMAIN}/api/${process.env.SHOPIFY_API_VERSION}/graphql.json`;
   private readonly headers = {
     'Content-Type': 'application/json',
     'X-Shopify-Storefront-Access-Token': process.env.SHOPIFY_STOREFRONT_TOKEN,
@@ -56,7 +56,6 @@ export class ShopifyStorefrontService {
       );
       return response.data.data.products.edges.map(edge => edge.node);
     } catch (error) {
-      console.log("🚀 ~ ShopifyStorefrontService ~ getProducts ~ error:", error)
       console.error('Storefront API Error:', error.response?.data || error.message);
       throw new HttpException(
         error.response?.data || { message: 'Failed to fetch products' },
@@ -127,5 +126,130 @@ export class ShopifyStorefrontService {
 
     const response = await axios.post(this.baseUrl, { query }, { headers: this.headers });
     return response.data;
+  }
+
+  /**
+     * Search products with store info and images
+     */
+  async searchProducts(query: string, limit = 10, after: string = '', before: string = '') {
+    // Choose direction based on after/before
+    const paginationArgs = [
+      'after: $after, before: $before,',
+      before ? 'last: $limit' : 'first: $limit',
+    ].filter(Boolean).join(' ');
+
+    const gql = `
+      query SearchProducts(
+        $query: String!,
+        $limit: Int!,
+        $after: String,
+        $before: String
+      ) {
+        # 🔹 Store Information
+        shop {
+          name
+          description
+          primaryDomain {
+            url
+            host
+          }
+          moneyFormat
+          shipsToCountries
+        }
+
+        # 🔹 Product Search
+        search(${paginationArgs}, query: $query) {
+        totalCount   # ✅ Get total count of matching products
+          edges {
+            cursor
+            node {
+              ... on Product {
+                id
+                title
+                handle
+                description
+                featuredImage {
+                  url
+                  altText
+                }
+                images(first: 5) {
+                  edges {
+                    node {
+                      url
+                      altText
+                    }
+                  }
+                }
+                variants(first: 3) {
+                  edges {
+                    node {
+                      id
+                      title
+                      price {
+                        amount
+                        currencyCode
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          pageInfo {
+            hasNextPage
+            hasPreviousPage
+            startCursor
+            endCursor
+          }
+        }
+      }
+    `;
+
+    const variables: Record<string, any> = {
+      query,
+      limit,
+    };
+    if (after) variables.after = after;
+    if (before) variables.before = before;
+
+    try {
+      const res = await axios.post(
+        this.baseUrl,
+        {
+          query: gql,
+          variables,
+        },
+        { headers: this.headers },
+      );
+
+      if (res.data.errors) {
+        throw new Error(JSON.stringify(res.data.errors));
+      }
+
+      const { shop, search } = res.data.data;
+      const { edges, pageInfo } = search;
+
+      const products = edges.map((edge) => ({
+        cursor: edge.cursor,
+        ...edge.node,
+      }));
+
+      return {
+        store: shop,
+        products,
+        pagination: {
+          hasNextPage: pageInfo.hasNextPage,
+          hasPreviousPage: pageInfo.hasPreviousPage,
+          nextCursor: pageInfo.endCursor,
+          previousCursor: pageInfo.startCursor,
+        },
+      };
+    } catch (error) {
+      console.error('Storefront API search failed:', error.response?.data || error.message);
+      throw new HttpException(
+        error.response?.data || 'Failed to search products',
+        error.response?.status || HttpStatus.BAD_REQUEST,
+      );
+    }
   }
 }
