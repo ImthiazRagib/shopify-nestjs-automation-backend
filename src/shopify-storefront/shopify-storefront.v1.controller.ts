@@ -8,6 +8,7 @@ export class ShopifyStorefrontController {
 
   @Get('products')
   async getProducts(@Query('limit', ParseIntPipe) limit: number) {
+    // return this.storefrontService.getProducts(limit);
     return this.storefrontService.getProducts(limit);
   }
 
