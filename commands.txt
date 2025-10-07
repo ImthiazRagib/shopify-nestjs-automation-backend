@@ -1,0 +1,4 @@
+- shopify app config link 
+- shopify app deploy
+
+- ngrok http 3000
