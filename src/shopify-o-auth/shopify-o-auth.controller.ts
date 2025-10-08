@@ -11,18 +11,20 @@ export class ShopifyOAuthController {
    * @example GET /shopify-o-auth/install?shop=your-store.myshopify.com
    */
   @Get('install')
-  async install(@Query() query: InstallAppDto, @Res() res: import('express').Response) {
+  async install(@Query() query: InstallAppDto) {
     if (!query.shop) throw new HttpException('Missing shop parameter', HttpStatus.BAD_REQUEST);
     const authUrl = this.shopifyService.getAuthUrl(query.shop);
-    return res.status(HttpStatus.FOUND).json({ authUrl });
+    return { status: HttpStatus.FOUND, url: authUrl };
   }
 
   /**
    * Step 2: Shopify callback URL
    */
   @Get('callback')
-  async callback(@Query() query: CallbackDto, @Res() res: import('express').Response) {
+  async callback(@Query() query: any) {
+    console.log("🚀 ~ ShopifyOAuthController ~ callback ~ query:", query)
     const { shop, code, hmac } = query;
+
     if (!shop || !code || !hmac)
       throw new HttpException('Missing parameters', HttpStatus.BAD_REQUEST);
 
@@ -37,6 +39,6 @@ export class ShopifyOAuthController {
     // Store accessToken in DB or cache for future use
     console.log(`✅ Access Token for ${shop}:`, accessToken);
 
-    return res.json({ shop, accessToken });
+    return { shop, accessToken };
   }
 }

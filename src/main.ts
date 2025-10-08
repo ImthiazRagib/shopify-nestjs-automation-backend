@@ -3,15 +3,25 @@ import { AppModule } from './app.module';
 import { ResponseInterceptor } from './interceptors/response.interceptor';
 import { AllExceptionsFilter } from './exceptions/all-exceptions.filter';
 import { ValidationPipe } from '@nestjs/common';
+import { join } from 'path';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    logger: ['log', 'error', 'warn', 'debug', 'verbose'],
+  });
 
+    // 👇 Set EJS as the view engine
+  app.setViewEngine('ejs');
+
+  // 👇 Set the views directory
+  app.setBaseViewsDir(join(__dirname, '..', 'views'));
+  
   // 👇 Set global prefix
   app.setGlobalPrefix('api');
 
   // ✅ Use global response wrapper
-  app.useGlobalInterceptors(new ResponseInterceptor());
+  // app.useGlobalInterceptors(new ResponseInterceptor());
 
 
   // ✅ Global error filter

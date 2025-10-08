@@ -8,9 +8,9 @@ import { AddShopifyProductDto } from './dto/shopify.products.dto';
 export class ShopifyService {
 
     private version = process.env.SHOPIFY_API_VERSION;
-    private baseUrl = `https://${process.env.SHOPIFY_STORE_URL}/admin/api/${this.version}`;
+    private baseUrl = `https://${process.env.SHOPIFY_STOREFRONT_DOMAIN}/admin/api/${this.version}`;
     private headers = {
-        'X-Shopify-Access-Token': process.env.SHOPIFY_ADMIN_ACCESS_TOKEN,
+        'X-Shopify-Access-Token': "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", //process.env.SHOPIFY_ADMIN_ACCESS_TOKEN,
         'Content-Type': 'application/json',
     };
 
@@ -21,13 +21,10 @@ export class ShopifyService {
 
     async getHttpResponse(endpoint: string, headers?: object, query?: object) {
         try {
-            const store = process.env.SHOPIFY_STORE_NAME;
-            const version = process.env.SHOPIFY_API_VERSION;
-            const baseUrl = `https://${store}.myshopify.com/admin/api/${version}${endpoint}`;
+            const baseUrl = `${this.baseUrl}${endpoint}`;
             headers = {
                 ...headers,
-                'X-Shopify-Access-Token': process.env.SHOPIFY_ADMIN_ACCESS_TOKEN,
-                'Content-Type': 'application/json',
+                ...this.headers,
             };
 
             const response: any = await firstValueFrom(
