@@ -24,7 +24,7 @@ export class ShopifyOAuthController {
   async callback(@Query() query: any) {
     console.log("🚀 ~ ShopifyOAuthController ~ callback ~ query:", query)
     const { shop, code, hmac } = query;
-    return { status: HttpStatus.OK };
+
     if (!shop || !code || !hmac)
       throw new HttpException('Missing parameters', HttpStatus.BAD_REQUEST);
 

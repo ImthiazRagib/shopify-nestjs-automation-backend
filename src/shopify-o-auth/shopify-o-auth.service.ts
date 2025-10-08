@@ -16,17 +16,19 @@ export class ShopifyOAuthService {
     getAuthUrl(shop: string): string {
         // return shop
         const state = crypto.randomBytes(16).toString('hex');
-        // const params = querystring.stringify({
-        //     client_id: this.clientId,
-        //     scope: this.scopes,
-        //     redirect_uri: this.redirectUri,
-        //     state,
-        //     grant_options: ['per-user'],
-        // });
-        const params = `client_id=${this.clientId}&scope=${this.scopes}&state=${state}&grant_options=${JSON.stringify(['per-user'])}&redirect_uri=${this.redirectUri}`
-        console.log("🚀 ~ ShopifyOAuthService ~ getAuthUrl ~ params:", params)
+        const params = querystring.stringify({
+            client_id: this.clientId,
+            scope: this.scopes,
+            redirect_uri: this.redirectUri,
+            state,
+            'grant_options[]': 'per-user',
+        });
+        
+        const authUrl = `https://${shop}/admin/oauth/authorize?${params}`
+        // const params = `client_id=${this.clientId}&scope=${this.scopes}&state=${state}&grant_options=${JSON.stringify(['per-user'])}&redirect_uri=${this.redirectUri}`
+        console.log("🚀 ~ ShopifyOAuthService ~ getAuthUrl ~ authUrl:", authUrl)
 
-        return `https://${shop}/admin/oauth/authorize?${params}`;
+        return authUrl;
     }
 
     /**

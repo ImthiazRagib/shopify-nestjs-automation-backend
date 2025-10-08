@@ -2,3 +2,6 @@
 - shopify app deploy
 
 - ngrok http 3000
+
+- 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
+- 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
