@@ -2,7 +2,7 @@
 
 client_id = "da324162651b532c20ca492346bbd345"
 name = "quickdropx"
-application_url = "https://florida-unhabituated-gruntingly.ngrok-free.dev/api/shopify-view"
+application_url = "https://florida-unhabituated-gruntingly.ngrok-free.dev/"
 embedded = true
 
 [webhooks]

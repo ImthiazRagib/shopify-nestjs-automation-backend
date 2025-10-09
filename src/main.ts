@@ -11,14 +11,28 @@ async function bootstrap() {
     logger: ['log', 'error', 'warn', 'debug', 'verbose'],
   });
 
-    // 👇 Set EJS as the view engine
+  // 👇 Set EJS as the view engine
   app.setViewEngine('ejs');
 
   // 👇 Set the views directory
   app.setBaseViewsDir(join(__dirname, '..', 'views'));
-  
+
   // 👇 Set global prefix
   app.setGlobalPrefix('api');
+
+  app.enableCors({
+    origin: [
+      'http://localhost:5173',
+      'http://192.168.x.x:5173',
+      '*',
+      'https://florida-unhabituated-gruntingly.ngrok-free.dev'
+    ], // add allowed origins
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['Authorization'],
+    credentials: true,
+  });
+
 
   // ✅ Use global response wrapper
   // app.useGlobalInterceptors(new ResponseInterceptor());
