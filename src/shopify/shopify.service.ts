@@ -10,8 +10,8 @@ export class ShopifyService {
     private version = process.env.SHOPIFY_API_VERSION;
     private baseUrl = `https://${process.env.SHOPIFY_STOREFRONT_DOMAIN}/admin/api/${this.version}`;
     private headers = {
-        'X-Shopify-Access-Token': "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", //process.env.SHOPIFY_ADMIN_ACCESS_TOKEN,
-        'Content-Type': 'application/json',
+        'X-Shopify-Access-Token': process.env.SHOPIFY_ADMIN_ACCESS_TOKEN,
+        'Content-Type': process.env.CONTENT_TYPE,
     };
 
     constructor(
@@ -40,7 +40,8 @@ export class ShopifyService {
         }
     }
     // * Products
-    async createProduct(payload: AddShopifyProductDto) {
+    async createProduct(payload: any) {
+        console.log("🚀 ~ ShopifyService ~ createProduct ~ payload:", payload)
         try {
             const product = {
                 product: {

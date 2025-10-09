@@ -9,7 +9,7 @@ export class ShopifyControllerV1 {
     ) { }
 
     @Post('products/create')
-    createProduct(@Body() payload: AddShopifyProductDto) {
+    createProduct(@Body() payload: any) {
         return this.shopifyService.createProduct(payload);
     }
 

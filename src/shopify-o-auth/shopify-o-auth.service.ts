@@ -5,10 +5,10 @@ import * as querystring from 'querystring';
 
 @Injectable()
 export class ShopifyOAuthService {
-    private readonly clientId = "da324162651b532c20ca492346bbd345" //process.env.SHOPIFY_STOREFRONT_API_KEY;
-    private readonly clientSecret = "87330dec23a79ac55369978053f70b5f" //process.env.SHOPIFY_STOREFRONT_API_SECRET_KEY;
-    private readonly scopes = process.env.SHOPIFY_SCOPES;
-    private readonly redirectUri = "https://florida-unhabituated-gruntingly.ngrok-free.dev/api/shopify-o-auth/callback" //process.env.SHOPIFY_REDIRECT_URI;
+    private readonly clientId = process.env.CLIENT_ID;
+    private readonly clientSecret = process.env.CLIENT_SECRET;
+    private readonly scopes = process.env.APP_SCOPES;
+    private readonly redirectUri = `${process.env.REDIRECT_URI}`; //process.env.SHOPIFY_REDIRECT_URI;
 
     /**
      * Step 1: Redirect merchant to Shopify authorization URL
@@ -40,6 +40,7 @@ export class ShopifyOAuthService {
                 client_id: this.clientId,
                 client_secret: this.clientSecret,
                 code,
+                scope: this.scopes,
             });
             return res.data.access_token;
         } catch (error) {
