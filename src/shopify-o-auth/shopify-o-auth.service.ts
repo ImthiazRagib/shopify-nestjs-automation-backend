@@ -19,7 +19,7 @@ export class ShopifyOAuthService {
 
     async createOrUpdate(store: Partial<ShopifyStore>): Promise<ShopifyStore> {
         return this.storeModel.findOneAndUpdate(
-            { id: store.id },
+            { shopId: store.shopId },
             store,
             { upsert: true, new: true },
         ).exec();

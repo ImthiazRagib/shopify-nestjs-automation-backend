@@ -21,11 +21,13 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   app.enableCors({
-    origin: [
-      'http://localhost:5173',
-      'http://192.168.x.x:5173',
-      'https://florida-unhabituated-gruntingly.ngrok-free.dev'
-    ], // add allowed origins
+    // origin: [
+    //   'http://localhost:5173',
+    //   'http://192.168.x.x:5173',
+    //   'https://florida-unhabituated-gruntingly.ngrok-free.dev',
+    //   /^https:\/\/.*\.shopify\.com$/
+    // ], // add allowed origins
+    origin: true, // allow all origins
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     exposedHeaders: ['Authorization'],

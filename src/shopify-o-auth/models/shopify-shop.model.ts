@@ -6,7 +6,7 @@ export type ShopifyStoreDocument = ShopifyStore & Document;
 @Schema({ timestamps: true })
 export class ShopifyStore {
     @Prop({ required: true, unique: true })
-    id: string; // Shopify global ID (gid://shopify/Shop/...)
+    shopId: string; // Shopify global ID (gid://shopify/Shop/...)
 
     @Prop({ required: true })
     name: string;
