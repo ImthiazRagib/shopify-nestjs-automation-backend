@@ -16,5 +16,5 @@ use_legacy_install_flow = false
 
 [auth]
 redirect_urls = [
-  "https://florida-unhabituated-gruntingly.ngrok-free.dev/api/shopify-o-auth/callback"
+  "https://dev.shopify.test-api.codeinprogress.net/api/shopify-o-auth/callback"
 ]
