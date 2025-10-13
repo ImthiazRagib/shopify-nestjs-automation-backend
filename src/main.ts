@@ -24,7 +24,6 @@ async function bootstrap() {
     origin: [
       'http://localhost:5173',
       'http://192.168.x.x:5173',
-      '*',
       'https://florida-unhabituated-gruntingly.ngrok-free.dev'
     ], // add allowed origins
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
