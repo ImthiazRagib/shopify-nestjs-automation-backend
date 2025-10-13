@@ -1,9 +1,11 @@
-import { Controller, Get, HttpException, HttpStatus, Post, Query, Res } from '@nestjs/common';
+import { Body, Controller, Get, HttpException, HttpStatus, Post, Query, Res } from '@nestjs/common';
 import axios from 'axios';
 import * as crypto from 'crypto';
+import { AuthService } from './auth.service';
 
 @Controller('auth')
 export class AuthController {
+    constructor(private readonly authService: AuthService) {}
 
     @Get('install')
     async install(@Query('shop') shop: string, @Res() res: any) {

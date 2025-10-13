@@ -1,11 +1,23 @@
-import { Controller, Get, Query, Res, HttpException, HttpStatus, } from '@nestjs/common';
+import { Controller, Get, Query, Res, HttpException, HttpStatus, Post, Body, } from '@nestjs/common';
 import { ShopifyOAuthService } from './shopify-o-auth.service';
 import { CallbackDto, InstallAppDto } from './dto/o-auth.dto';
 
 @Controller('shopify-o-auth')
 export class ShopifyOAuthController {
-  constructor(private readonly shopifyService: ShopifyOAuthService) {}
+  constructor(private readonly shopifyService: ShopifyOAuthService) { }
 
+
+
+  @Post('create')
+  async create(@Body() body: any) {
+    console.log("🚀 ~ ShopifyOAuthController ~ create ~ body:", body)
+    return this.shopifyService.createOrUpdate(body);
+  }
+
+  @Post('verify')
+  async verify(@Body() body: any) {
+    return this.shopifyService.verify(body);
+  }
   /**
    * Step 1: Redirect to Shopify OAuth page
    * @example GET /shopify-o-auth/install?shop=your-store.myshopify.com

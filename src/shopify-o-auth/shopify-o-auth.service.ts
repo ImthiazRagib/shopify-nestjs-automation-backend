@@ -2,6 +2,9 @@ import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import axios from 'axios';
 import * as crypto from 'crypto';
 import * as querystring from 'querystring';
+import { ShopifyStore } from './models/shopify-shop.model';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 
 @Injectable()
 export class ShopifyOAuthService {
@@ -9,6 +12,42 @@ export class ShopifyOAuthService {
     private readonly clientSecret = process.env.CLIENT_SECRET;
     private readonly scopes = process.env.APP_SCOPES;
     private readonly redirectUri = `${process.env.REDIRECT_URI}`; //process.env.SHOPIFY_REDIRECT_URI;
+
+    constructor(
+        @InjectModel(ShopifyStore.name) private storeModel: Model<ShopifyStore>,
+    ) { }
+
+    async createOrUpdate(store: Partial<ShopifyStore>): Promise<ShopifyStore> {
+        return this.storeModel.findOneAndUpdate(
+            { id: store.id },
+            store,
+            { upsert: true, new: true },
+        ).exec();
+    }
+
+    async findAll(): Promise<ShopifyStore[]> {
+        return this.storeModel.find().exec();
+    }
+
+    async findById(id: string): Promise<ShopifyStore | null> {
+        return this.storeModel.findOne({ id }).exec();
+    }
+
+
+    async create(payload: any) {
+        console.log("🚀 ~ ShopifyOAuthService ~ create ~ payload:", payload)
+        return {
+            payload,
+        };
+    }
+
+    async verify(payload: any) {
+        console.log("🚀 ~ ShopifyOAuthService ~ verify ~ payload:", payload)
+        return {
+            payload,
+        };
+    }
+
 
     /**
      * Step 1: Redirect merchant to Shopify authorization URL
@@ -23,7 +62,7 @@ export class ShopifyOAuthService {
             state,
             'grant_options[]': 'per-user',
         });
-        
+
         const authUrl = `https://${shop}/admin/oauth/authorize?${params}`
         // const params = `client_id=${this.clientId}&scope=${this.scopes}&state=${state}&grant_options=${JSON.stringify(['per-user'])}&redirect_uri=${this.redirectUri}`
         console.log("🚀 ~ ShopifyOAuthService ~ getAuthUrl ~ authUrl:", authUrl)
