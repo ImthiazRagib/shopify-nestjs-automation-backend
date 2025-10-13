@@ -1,0 +1,37 @@
+version: "3.8"
+
+services:
+  # Development service
+  app-dev:
+    build:
+      context: .
+      target: development
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+    command: yarn start:dev
+    networks:
+      - shopify-network
+
+  # Production service
+  app-prod:
+    build:
+      context: .
+      target: production
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    networks:
+      - shopify-network
+    restart: unless-stopped
+
+networks:
+  shopify-network:
+    driver: bridge
