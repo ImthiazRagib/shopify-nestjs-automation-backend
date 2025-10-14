@@ -2,9 +2,9 @@ import { Module } from '@nestjs/common';
 import { ShopifyControllerV1 } from './shopify.v1.controller';
 import { ShopifyService } from './shopify.service';
 import { HttpModule } from '@nestjs/axios';
-
+import { ShopModule } from './shop/shop.module';
 @Module({
-  imports: [HttpModule],
+  imports: [HttpModule, ShopModule],
   controllers: [ShopifyControllerV1],
   providers: [ShopifyService]
 })

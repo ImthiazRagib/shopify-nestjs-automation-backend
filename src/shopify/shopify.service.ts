@@ -349,9 +349,9 @@ export class ShopifyService {
     }
 
     //* STORES
-    async getAllStores() {
-        const allstores = await this.getHttpResponse('/shop.json')
-        return allstores;
+    async getShopInfo() {
+        const shopInfo = await this.getHttpResponse('/shop.json')
+        return shopInfo;
     }
 
     //* LOCATIONS

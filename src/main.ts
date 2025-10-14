@@ -36,7 +36,7 @@ async function bootstrap() {
 
 
   // ✅ Use global response wrapper
-  // app.useGlobalInterceptors(new ResponseInterceptor());
+  app.useGlobalInterceptors(new ResponseInterceptor());
 
 
   // ✅ Global error filter
