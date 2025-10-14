@@ -2,9 +2,9 @@ import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import axios from 'axios';
 import * as crypto from 'crypto';
 import * as querystring from 'querystring';
-import { ShopifyStore } from './models/shopify-shop.model';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { ShopifyStore } from 'src/shopify/shop/models/shopify-shop.model';
 
 @Injectable()
 export class ShopifyOAuthService {
@@ -17,12 +17,33 @@ export class ShopifyOAuthService {
         @InjectModel(ShopifyStore.name) private storeModel: Model<ShopifyStore>,
     ) { }
 
+    // async createOrUpdate(store: Partial<ShopifyStore>): Promise<ShopifyStore> {
+    //     return this.storeModel.findOneAndUpdate(
+    //         { shopId: store.shopId },
+    //         store,
+    //         { upsert: true, new: true },
+    //     ).exec();
+    // }
     async createOrUpdate(store: Partial<ShopifyStore>): Promise<ShopifyStore> {
-        return this.storeModel.findOneAndUpdate(
-            { shopId: store.shopId },
-            store,
-            { upsert: true, new: true },
-        ).exec();
+        const { shopId, accessToken, ...rest } = store;
+
+        const existing = await this.storeModel.findOne({ shopId });
+
+        if (existing) {
+            // 🟡 Update only token and other fields if needed
+            existing.accessToken = accessToken || existing.accessToken;
+            Object.assign(existing, rest); // optional: update other fields too
+            await existing.save();
+            return existing;
+        }
+
+        // 🟢 Create new shop if it doesn't exist
+        const newShop = new this.storeModel({
+            shopId,
+            accessToken,
+            ...rest,
+        });
+        return newShop.save();
     }
 
     async findAll(): Promise<ShopifyStore[]> {

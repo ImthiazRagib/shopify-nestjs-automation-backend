@@ -8,6 +8,7 @@ import { ShopifyPartnerModule } from './shopify-partner/shopify-partner.module';
 import { ShopifyStorefrontModule } from './shopify-storefront/shopify-storefront.module';
 import { ShopifyOAuthModule } from './shopify-o-auth/shopify-o-auth.module';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ShopModule } from './shopify/shop/shop.module';
 
 @Module({
   imports: [    // Load .env globally
@@ -23,9 +24,9 @@ import { MongooseModule } from '@nestjs/mongoose';
     }),
     ShopifyModule,
     AuthModule,
-    ShopifyPartnerModule,
-    ShopifyStorefrontModule,
-    ShopifyOAuthModule
+    // ShopifyPartnerModule,
+    // ShopifyStorefrontModule,
+    ShopifyOAuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

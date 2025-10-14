@@ -54,9 +54,9 @@ export class ShopifyControllerV1 {
         return this.shopifyService.getOrders();
     }
 
-    @Get('stores')
-    getStores() {
-        return this.shopifyService.getAllStores();
+    @Get('shops')
+    getShops() {
+        return this.shopifyService.getShopInfo();
     }
 
 
