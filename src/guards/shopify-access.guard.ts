@@ -35,7 +35,7 @@ export class ShopifyAccessGuard implements CanActivate {
             throw new UnauthorizedException('Shopify access token not found');
         }
 
-        request['accessToken'] = accessTokenExist.accessToken;
+        request['shopifyStore'] = accessTokenExist;
 
 
 

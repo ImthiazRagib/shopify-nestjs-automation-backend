@@ -15,20 +15,21 @@ export class ShopService {
     ) {
     }
 
+    // * 🔵 Create or update shop informations in DB on application install from shopify appstore
     async createOrUpdate(store: Partial<ShopifyStore>): Promise<ShopifyStore> {
         const { shopId, accessToken, ...rest } = store;
 
         const existing = await this.storeModel.findOne({ shopId });
 
         if (existing) {
-            // 🟡 Update only token and other fields if needed
+            // * 🟡 Update only token and other fields if needed
             existing.accessToken = accessToken || existing.accessToken;
             Object.assign(existing, rest); // optional: update other fields too
             await existing.save();
             return existing;
         }
 
-        // 🟢 Create new shop if it doesn't exist
+        // * 🟢 Create new shop if it doesn't exist
         const newShop = new this.storeModel({
             shopId,
             accessToken,
@@ -61,9 +62,8 @@ export class ShopService {
         }
     }
 
-    async getShopifyShop(payload: QueryShopDto, accessToken) {
+    async getShopifyShop(payload: QueryShopDto, accessToken: string) {
         try {
-
             const shop = await this.storeModel.findOne({
                 $or: [
                     { shopName: payload.shopName },
@@ -89,20 +89,76 @@ export class ShopService {
         }
     }
 
-    async getShopifyUtilities(payload: {
+    async getShopifyStoreUrl(payload: {
+        shopId?: string;
+        accessToken: string;
+    }) {
+        // Fetch shop details from your DB or other service
+        const shop = await this.getShopifyShop({ shopId: payload.shopId }, payload.accessToken);
+        const shopDomain = shop.myshopifyDomain.replace(/^https?:\/\//, ""); // ensure no double https
+        return {
+            shopId: shop.shopId,
+            shopDomain,
+            shopUrl: `https://${shopDomain}/admin/api/${this.version}`,
+            accessToken: shop.accessToken,
+        };
+    }
+
+
+    async createShopifyUtilities(payload: {
         shopId: string;
+        accessToken: string;
+        endpoint: string;
+        data: any;
+    }) {
+
+        if (!payload.data) {
+            throw new HttpException(
+                'Request payload is invalid.',
+                HttpStatus.BAD_REQUEST,
+            );
+        }
+
+        try {
+            const {
+                shopUrl,
+            } = await this.getShopifyStoreUrl({ shopId: payload.shopId, accessToken: payload.accessToken });
+
+            const url = `${shopUrl}/${payload.endpoint}`;
+
+            console.log("🟢 Shopify POST API Call →", url);
+
+            const response = await this.httpService.axiosRef.post(url, payload.data, {
+                headers: {
+                    "X-Shopify-Access-Token": payload.accessToken,
+                    "Content-Type": "application/json",
+                },
+            });
+
+            return response;
+        } catch (error) {
+            throw new HttpException(
+                error.response?.data || 'Shopify API error',
+                error.status || HttpStatus.BAD_REQUEST,
+            );
+        }
+    }
+
+    async getShopifyUtilities(payload: {
+        shopId?: string;
         accessToken: string;
         endpoint: string;
     }) {
 
         try {
-            // Fetch shop details from your DB or other service
-            const shop = await this.getShopifyShop({ shopId: payload.shopId }, payload.accessToken);
-            const shopDomain = shop.myshopifyDomain.replace(/^https?:\/\//, ""); // ensure no double https
 
-            const url = `https://${shopDomain}/admin/api/${this.version}/${payload.endpoint}`;
+            const {
+                shopUrl,
+            } = await this.getShopifyStoreUrl({ shopId: payload.shopId, accessToken: payload.accessToken });
 
-            console.log("🟢 Shopify API Call →", url);
+            const url = `${shopUrl}/${payload.endpoint}`;
+
+            console.log("🟢 Shopify GET API Call →", url);
 
             const { data } = await this.httpService.axiosRef.get(url, {
                 headers: {
@@ -113,7 +169,6 @@ export class ShopService {
 
             return data;
         } catch (error) {
-            console.log("🚀 ~ ShopService ~ getShopifyUtilities ~ error:", error.response)
             throw new HttpException(
                 error.response?.data?.errors || 'Shopify API error',
                 error.status || HttpStatus.BAD_REQUEST,
@@ -128,9 +183,9 @@ export class ShopService {
     }) {
 
         try {
-            // Fetch shop details from your DB or other service
-            const shop = await this.getShopifyShop({ shopId: payload.shopId }, payload.accessToken);
-            const shopDomain = shop.myshopifyDomain.replace(/^https?:\/\//, ""); // ensure no double https
+            const {
+                shopDomain,
+            } = await this.getShopifyStoreUrl({ shopId: payload.shopId, accessToken: payload.accessToken });
 
             const url = `https://${shopDomain}/admin/oauth/access_scopes.json`;
 
@@ -145,7 +200,6 @@ export class ShopService {
 
             return data;
         } catch (error) {
-            console.log("🚀 ~ ShopService ~ getShopifyUtilities ~ error:", error)
             throw new HttpException(
                 error.response?.data?.errors || 'Shopify API error',
                 error.status || HttpStatus.BAD_REQUEST,
@@ -153,54 +207,72 @@ export class ShopService {
         }
     }
 
-    // // * Products
-    // async createProduct(payload: any) {
-    //     console.log("🚀 ~ ShopifyService ~ createProduct ~ payload:", payload)
-    //     try {
-    //         const product = {
-    //             product: {
-    //                 ...payload
-    //             },
-    //         };
+    // * Products
+    async createProduct(payload: {
+        shopId: string;
+        accessToken: string;
+        data: Record<string, any>;
+    }) {
+        try {
+            const product = {
+                product: {
+                    ...payload.data
+                },
+            };
 
-    //         const { data } = await axios.post(
-    //             `${this.baseUrl}/products.json`,
-    //             product,
-    //             { headers: this.headers },
-    //         );
-    //         return data.product;
-    //     } catch (error) {
-    //         console.log(error.response.data.errors);
-    //         throw new HttpException(
-    //             error.response?.data?.errors
-    //                 ? { errors: error.response.data.errors, message: error.message }
-    //                 : { message: 'Failed to create product' },
-    //             error.response?.status || HttpStatus.BAD_REQUEST
-    //         );
-    //     }
-    // }
+            const { data } = await this.createShopifyUtilities({
+                shopId: payload.shopId,
+                accessToken: payload.accessToken,
+                endpoint: 'products.json',
+                data: product,
+            });
+            return data.product;
+        } catch (error) {
+            console.log(error);
+            throw new HttpException(
+                error.response?.data?.errors
+                    ? { errors: error.response.data.errors, message: error.message }
+                    : { message: 'Failed to create product' },
+                error.response?.status || HttpStatus.BAD_REQUEST
+            );
+        }
+    }
 
-    // async updateProduct(productId: number, payload: any) {
-    //     try {
-    //         await this.getSingleProduct(productId);
-    //         const _payload = { product: { id: productId, ...payload } };
+    async updateProduct(payload: {
+        shopId: string;
+        productId: number;
+        accessToken: string;
+        data: Record<string, any>;
+    }) {
+        try {
 
-    //         const res = await axios.put(
-    //             `${this.baseUrl}/products/${productId}.json`,
-    //             _payload,
-    //             { headers: this.headers },
-    //         );
-    //         return res.data;
-    //     } catch (error) {
-    //         console.log(error);
-    //         throw new HttpException(
-    //             error.response?.data?.errors
-    //                 ? { errors: error.response.data.errors, message: error.message }
-    //                 : { message: 'Failed to update product' },
-    //             error.response?.status || HttpStatus.BAD_REQUEST
-    //         );
-    //     }
-    // }
+            const { shopUrl } = await this.getShopifyStoreUrl({ shopId: payload.shopId, accessToken: payload.accessToken });
+            const product = await this.getSingleProduct({
+                shopId: payload.shopId,
+                productId: payload.productId,
+                accessToken: payload.accessToken,
+            });
+            const _payload = { product: { id: product.id, ...payload.data } };
+
+            const res = await this.httpService.axiosRef.put(
+                `${shopUrl}/products/${payload.productId}.json`,
+                _payload,
+                { headers: {
+                    "X-Shopify-Access-Token": payload.accessToken,
+                    "Content-Type": "application/json",
+                } },
+            );
+            return res.data;
+        } catch (error) {
+            console.log(error);
+            throw new HttpException(
+                error.response?.data?.errors
+                    ? { errors: error.response.data.errors, message: error.message }
+                    : { message: 'Failed to update product' },
+                error.response?.status || HttpStatus.BAD_REQUEST
+            );
+        }
+    }
 
     // async deleteProduct(productId: number) {
     //     try {
@@ -226,12 +298,6 @@ export class ShopService {
     //     }
     // }
 
-
-    // async getUsersShopifyProducts() {
-    //     const products = await this.getHttpResponse('/products.json')
-    //     return products;
-    // }
-
     async getProducts(query: QueryShopDto, accessToken: string) {
         return await this.getShopifyUtilities({
             shopId: query.shopId,
@@ -240,17 +306,29 @@ export class ShopService {
         })
     }
 
-    // async getSingleProduct(productId: number) {
-    //     try {
-    //         const product = await this.getHttpResponse(`/products/${productId}.json`);
-    //         return product;
-    //     } catch (error) {
-    //         throw new HttpException(
-    //             error.message || 'Failed to fetch product',
-    //             error.status || HttpStatus.BAD_REQUEST
-    //         );
-    //     }
-    // }
+    async getSingleProduct({
+        shopId,
+        productId,
+        accessToken,
+    }: {
+        shopId: string;
+        productId: number;
+        accessToken: string;
+    }) {
+        try {
+            const product = await this.getShopifyUtilities({
+                shopId,
+                accessToken,
+                endpoint: `/products/${productId}.json`,
+            });
+            return product;
+        } catch (error) {
+            throw new HttpException(
+                error.message || 'Failed to fetch product',
+                error.status || HttpStatus.BAD_REQUEST
+            );
+        }
+    }
 
     // async getProductTypes() {
     //     const types = await this.getHttpResponse('/products.json?fields=product_type')
@@ -296,8 +374,14 @@ export class ShopService {
     }
 
     // //* LOCATIONS
-    // async getAllLocations() {
-    //     const allLocations = await this.getHttpResponse('/locations.json')
-    //     return allLocations;
-    // }
+    async getAllLocations(query: QueryShopDto, accessToken: string) {
+        const locations = await this.getShopifyUtilities(
+            {
+                shopId: query.shopId,
+                accessToken,
+                endpoint: 'locations.json',
+            }
+        )
+        return locations;
+    }
 }
