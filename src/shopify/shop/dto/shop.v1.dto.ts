@@ -7,10 +7,10 @@ export class GetOrdersDto {
   @IsString()
   shopId: string;
 
-  @ApiProperty({ description: 'Access token for the shop', required: false })
-  @IsNotEmpty()
-  @IsString()
-  accessToken: string;
+//   @ApiProperty({ description: 'Access token for the shop', required: false })
+//   @IsNotEmpty()
+//   @IsString()
+//   accessToken: string;
 
   @ApiProperty({ description: 'Name of the shop', required: false })
   @IsOptional()
@@ -28,10 +28,10 @@ export class QueryShopDto {
   @IsNotEmpty()
   @IsString()
   shopId: string;
-  @ApiProperty({ description: 'Access token for the shop', required: false })
-  @IsOptional()
-  @IsString()
-  accessToken?: string;
+//   @ApiProperty({ description: 'Access token for the shop', required: false })
+//   @IsOptional()
+//   @IsString()
+//   accessToken?: string;
 
   @ApiProperty({ description: 'Name of the shop', required: false })
   @IsOptional()
