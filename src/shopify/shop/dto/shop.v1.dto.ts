@@ -1,7 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsOptional, IS_ALPHA } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { GlobalPaginationDto } from 'src/global-dto/global-pagination.dto';
 
-export class GetOrdersDto {
+export class GetOrdersDto extends GlobalPaginationDto {
   @ApiProperty({ description: 'Unique identifier of the shop' })
   @IsNotEmpty()
   @IsString()
@@ -23,7 +24,7 @@ export class GetOrdersDto {
   domain?: string;
 }
 
-export class QueryShopDto {
+export class QueryShopDto extends GlobalPaginationDto {
   @ApiProperty({ description: 'Unique identifier of the shop' })
   @IsNotEmpty()
   @IsString()

@@ -113,7 +113,7 @@ export class ShopService {
 
             return data;
         } catch (error) {
-            console.log("🚀 ~ ShopService ~ getShopifyUtilities ~ error:", error)
+            console.log("🚀 ~ ShopService ~ getShopifyUtilities ~ error:", error.response)
             throw new HttpException(
                 error.response?.data?.errors || 'Shopify API error',
                 error.status || HttpStatus.BAD_REQUEST,
@@ -236,7 +236,7 @@ export class ShopService {
         return await this.getShopifyUtilities({
             shopId: query.shopId,
             accessToken,
-            endpoint: '/products.json',
+            endpoint: `/products.json?limit=${query.limit || 10}&page_info=${``}&sort_by=${query.sortBy || 'created_at'}&sort_order=${query.sortOrder || 'ASC'}`,
         })
     }
 
@@ -273,7 +273,7 @@ export class ShopService {
             {
                 shopId: query.shopId,
                 accessToken,
-                endpoint: 'orders.json',
+                endpoint: `orders.json?limit=${query.limit || 1}&page_info=${``}&sort_by=${query.sortBy || 'created_at'}&sort_order=${query.sortOrder || 'ASC'}`,
             }
         )
         return orders;
