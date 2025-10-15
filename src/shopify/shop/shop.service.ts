@@ -37,14 +37,38 @@ export class ShopService {
         return newShop.save();
     }
 
-    async getShopifyShop(payload: QueryShopDto) {
+    async checkAccessTokenExist(payload: {
+        accessToken: string;
+    }) {
+        try {
+            const shop = await this.storeModel.findOne({
+                accessToken: payload.accessToken,
+            }).exec();
+
+            if (!shop) {
+                throw new HttpException(
+                    'Shop not found',
+                    HttpStatus.NOT_FOUND,
+                );
+            }
+
+            return shop.toObject();
+        } catch (error) {
+            throw new HttpException(
+                error.message || 'Shopify API error',
+                error.status || HttpStatus.BAD_REQUEST,
+            );
+        }
+    }
+
+    async getShopifyShop(payload: QueryShopDto, accessToken) {
         try {
 
             const shop = await this.storeModel.findOne({
                 $or: [
                     { shopName: payload.shopName },
                     { domain: payload.domain },
-                    { accessToken: payload.accessToken },
+                    { accessToken: accessToken },
                     { shopId: payload.shopId },
                 ]
             }).exec();
@@ -73,7 +97,7 @@ export class ShopService {
 
         try {
             // Fetch shop details from your DB or other service
-            const shop = await this.getShopifyShop({ shopId: payload.shopId });
+            const shop = await this.getShopifyShop({ shopId: payload.shopId }, payload.accessToken);
             const shopDomain = shop.myshopifyDomain.replace(/^https?:\/\//, ""); // ensure no double https
 
             const url = `https://${shopDomain}/admin/api/${this.version}/${payload.endpoint}`;
@@ -105,7 +129,7 @@ export class ShopService {
 
         try {
             // Fetch shop details from your DB or other service
-            const shop = await this.getShopifyShop({ shopId: payload.shopId });
+            const shop = await this.getShopifyShop({ shopId: payload.shopId }, payload.accessToken);
             const shopDomain = shop.myshopifyDomain.replace(/^https?:\/\//, ""); // ensure no double https
 
             const url = `https://${shopDomain}/admin/oauth/access_scopes.json`;
@@ -241,11 +265,11 @@ export class ShopService {
     // }
 
     //* ORDERS
-    async getShopifyOrders(query: GetOrdersDto) {
+    async getShopifyOrders(query: GetOrdersDto, accessToken: string) {
         const orders = await this.getShopifyUtilities(
             {
                 shopId: query.shopId,
-                accessToken: query.accessToken || '',
+                accessToken,
                 endpoint: 'orders.json',
             }
         )
@@ -257,11 +281,11 @@ export class ShopService {
     // }
 
     //* STORES
-    async getShopInfo(query: QueryShopDto) {
+    async getShopInfo(query: QueryShopDto, accessToken: string) {
         const shopInfo = await this.getShopifyUtilities(
             {
                 shopId: query.shopId,
-                accessToken: query.accessToken || '',
+                accessToken,
                 endpoint: 'shop.json',
             }
         )

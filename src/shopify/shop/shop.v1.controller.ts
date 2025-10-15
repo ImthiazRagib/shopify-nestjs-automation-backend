@@ -1,8 +1,10 @@
-import { Controller, Query } from '@nestjs/common';
+import { Controller, Query, Req, UseGuards } from '@nestjs/common';
 import { ShopService } from './shop.service';
 import { Post, Body, Get, Param, ParseIntPipe, Put, Delete } from '@nestjs/common';
 import { GetOrdersDto } from './dto/shop.v1.dto';
+import { ShopifyAccessGuard } from 'src/guards/shopify-access.guard';
 
+@UseGuards(ShopifyAccessGuard)
 @Controller('v1/shop')
 export class ShopController {
     constructor(private readonly shopService: ShopService) { }
@@ -13,10 +15,11 @@ export class ShopController {
     // }
 
     @Get('access-scopes')
-    getShopifyAccessScopes(@Query() query: GetOrdersDto) {
+    getShopifyAccessScopes(@Req() req: any, @Query() query: GetOrdersDto) {
+        const accessToken = req.accessToken;
         return this.shopService.getShopifyAccessScopes({
             shopId: query.shopId,
-            accessToken: query.accessToken,
+            accessToken,
             endpoint: 'access_scopes',
         });
     }
@@ -63,13 +66,19 @@ export class ShopController {
     // }
 
     @Get('orders')
-    getOrders(@Query() query: GetOrdersDto) {
-        return this.shopService.getShopifyOrders(query);
+    getOrders(@Req() req: any, @Query() query: GetOrdersDto) {
+        const accessToken = req.accessToken;
+        return this.shopService.getShopifyOrders({
+            ...query
+        }, accessToken,);
     }
 
     @Get('info')
-    getShopInfo(@Query() query: GetOrdersDto) {
-        return this.shopService.getShopInfo(query);
+    getShopInfo(@Req() req: any, @Query() query: GetOrdersDto) {
+        const accessToken = req.accessToken;
+        return this.shopService.getShopInfo({
+            ...query
+        }, accessToken,);
     }
 
 
