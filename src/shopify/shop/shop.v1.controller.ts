@@ -29,10 +29,13 @@ export class ShopController {
     //     return this.shopService.createProduct(payload);
     // }
 
-    // @Get('products')
-    // getProducts() {
-    //     return this.shopService.getProducts();
-    // }
+    @Get('products')
+    getProducts(@Req() req: any, @Query() query: GetOrdersDto) {
+        const accessToken = req.accessToken;
+        return this.shopService.getProducts({
+            ...query
+        }, accessToken,);
+    }
 
     // @Get('products/:id')
     // getSingleProduct(@Param('id', ParseIntPipe) productId: number) {

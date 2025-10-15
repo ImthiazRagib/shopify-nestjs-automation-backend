@@ -232,10 +232,13 @@ export class ShopService {
     //     return products;
     // }
 
-    // async getProducts() {
-    //     // return await this.getUsersShopifyProducts()
-    //     return this.getDummyProducts()
-    // }
+    async getProducts(query: QueryShopDto, accessToken: string) {
+        return await this.getShopifyUtilities({
+            shopId: query.shopId,
+            accessToken,
+            endpoint: '/products.json',
+        })
+    }
 
     // async getSingleProduct(productId: number) {
     //     try {
