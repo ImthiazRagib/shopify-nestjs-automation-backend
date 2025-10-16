@@ -2,16 +2,58 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 import { GlobalPaginationDto } from 'src/global-dto/global-pagination.dto';
 
-export class GetOrdersDto extends GlobalPaginationDto {
+export class QueryShopProductDto extends GlobalPaginationDto {
     @ApiProperty({ description: 'Unique identifier of the shop', required: false })
     @IsOptional()
     @IsString()
     shopId?: string;
 
-    //   @ApiProperty({ description: 'Access token for the shop', required: false })
-    //   @IsNotEmpty()
-    //   @IsString()
-    //   accessToken: string;
+    @ApiProperty({ description: 'Title of the product', required: false })
+    @IsOptional()
+    @IsString()
+    title?: string;
+
+    @ApiProperty({ description: 'Vendor of the product', required: false })
+    @IsOptional()
+    @IsString()
+    vendor?: string;
+
+    @ApiProperty({ description: 'Product type', required: false })
+    @IsOptional()
+    @IsString()
+    product_type?: string;
+
+    @ApiProperty({ description: 'Status of the product', required: false, enum: ['active', 'draft', 'archived'] })
+    @IsOptional()
+    @IsString()
+    status?: string;
+
+    @ApiProperty({ description: 'Collection ID', required: false })
+    @IsOptional()
+    @IsString()
+    collection_id?: string;
+
+    @ApiProperty({ description: 'Fields to include', required: false })
+    @IsOptional()
+    @IsString()
+    fields?: string;
+
+    @ApiProperty({ description: 'Published status', required: false, enum: ['any', 'published', 'unpublished'] })
+    @IsOptional()
+    @IsString()
+    published_status?: string = 'any';
+
+    @ApiProperty({ description: 'Published scope', required: false, enum: ['global', 'web'] })
+    @IsOptional()
+    @IsString()
+    published_scope?: string;
+}
+
+export class GetOrdersDto extends GlobalPaginationDto {
+    @ApiProperty({ description: 'Unique identifier of the shop', required: false })
+    @IsOptional()
+    @IsString()
+    shopId?: string;
 
     @ApiProperty({ description: 'Name of the shop', required: false })
     @IsOptional()
@@ -22,6 +64,18 @@ export class GetOrdersDto extends GlobalPaginationDto {
     @IsOptional()
     @IsString()
     domain?: string;
+
+    @IsOptional()
+    @IsString()
+    financialStatus?: string; // paid, pending, refunded, voided
+
+    @IsOptional()
+    @IsString()
+    fulfillmentStatus?: string; // fulfilled, partial, unfulfilled, restocked
+
+    @IsOptional()
+    @IsString()
+    status?: string = 'any'; // open, closed, cancelled, any
 }
 
 export class QueryShopDto extends GlobalPaginationDto {

@@ -2,13 +2,13 @@ import { HttpService } from '@nestjs/axios';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { GetOrdersDto, QueryShopDto } from './dto/shop.v1.dto';
+import { GetOrdersDto, QueryShopDto, QueryShopProductDto } from './dto/shop.v1.dto';
 import { ShopifyStore } from './models/shopify-shop.model';
 
 @Injectable()
 export class ShopService {
     private version = process.env.SHOPIFY_API_VERSION;
-    private scopes = process.env.APP_SCOPES;
+
     constructor(
         private readonly httpService: HttpService,
         @InjectModel(ShopifyStore.name) private storeModel: Model<ShopifyStore>,
@@ -156,19 +156,27 @@ export class ShopService {
                 shopUrl,
             } = await this.getShopifyStoreUrl({ shopId: payload.shopId, accessToken: payload.accessToken });
 
-            const url = `${shopUrl}/${payload.endpoint}`;
+            const url = `${shopUrl}${payload.endpoint}`;
 
             console.log("🟢 Shopify GET API Call →", url);
 
-            const { data } = await this.httpService.axiosRef.get(url, {
+            const { data, headers } = await this.httpService.axiosRef.get(url, {
                 headers: {
                     "X-Shopify-Access-Token": payload.accessToken,
                     "Content-Type": "application/json",
                 },
             });
+            const linkHeader = headers['link'];
 
-            return data;
+            // Extract pagination info from Link header
+            const pagination = this.parseLinkHeader(linkHeader);
+
+            return {
+                data,
+                pagination,
+            };
         } catch (error) {
+            console.log("🚀 ~ ShopService ~ getShopifyUtilities ~ error:", error.response.data)
             throw new HttpException(
                 error.response?.data?.errors || 'Shopify API error',
                 error.status || HttpStatus.BAD_REQUEST,
@@ -257,10 +265,12 @@ export class ShopService {
             const res = await this.httpService.axiosRef.put(
                 `${shopUrl}/products/${payload.productId}.json`,
                 _payload,
-                { headers: {
-                    "X-Shopify-Access-Token": payload.accessToken,
-                    "Content-Type": "application/json",
-                } },
+                {
+                    headers: {
+                        "X-Shopify-Access-Token": payload.accessToken,
+                        "Content-Type": "application/json",
+                    }
+                },
             );
             return res.data;
         } catch (error) {
@@ -298,12 +308,18 @@ export class ShopService {
     //     }
     // }
 
-    async getProducts(query: QueryShopDto, accessToken: string) {
-        return await this.getShopifyUtilities({
+    async getProducts(query: QueryShopProductDto, accessToken: string) {
+        const queryParams = await this.createQueryParameters(query);
+        const { data, pagination } = await this.getShopifyUtilities({
             shopId: query.shopId,
             accessToken,
-            endpoint: `/products.json?limit=${query.limit || 10}&page_info=${``}&sort_by=${query.sortBy || 'created_at'}&sort_order=${query.sortOrder || 'ASC'}`,
+            endpoint: `/products.json?${queryParams}`,
         })
+
+        return {
+            products: data.products ?? [],
+            pagination,
+        }
     }
 
     async getSingleProduct({
@@ -321,7 +337,7 @@ export class ShopService {
                 accessToken,
                 endpoint: `/products/${productId}.json`,
             });
-            return product;
+            return product.data.product;
         } catch (error) {
             throw new HttpException(
                 error.message || 'Failed to fetch product',
@@ -345,13 +361,76 @@ export class ShopService {
     //     return await this.getHttpResponse('/smart_collections.json')
     // }
 
+    async createQueryParameters(query: GetOrdersDto | QueryShopDto | QueryShopProductDto) {
+        const params = new URLSearchParams();
+
+        // * Products
+        if ('title' in query && query.title) {
+            params.append('title', query.title);
+        }
+        if ('vendor' in query && query.vendor) {
+            params.append('vendor', query.vendor);
+        }
+        if ('product_type' in query && query.product_type) {
+            params.append('product_type', query.product_type);
+        }
+        if ('status' in query && query.status) {
+            params.append('status', query.status); // 'active', 'draft', 'archived'
+        }
+        if ('collection_id' in query && query.collection_id) {
+            params.append('collection_id', query.collection_id);
+        }
+        if ('fields' in query && query.fields) {
+            params.append('fields', query.fields);
+        }
+        if ('published_status' in query && query.published_status) {
+            params.append('published_status', query.published_status); // e.g. 'published'
+        }
+
+        if ('published_scope' in query && query.published_scope) {
+            params.append('published_scope', query.published_scope); // e.g. 'global'
+        }
+
+        // * Orders
+        if ('financialStatus' in query && query.financialStatus) {
+            params.append('financial_status', query.financialStatus);
+        }
+
+        if ('fulfillmentStatus' in query && query.fulfillmentStatus) {
+            params.append('fulfillment_status', query.fulfillmentStatus);
+        }
+
+        if ('status' in query && query.status) {
+            params.append('status', query.status);
+        }
+
+        //* Global
+
+        if (query.limit) {
+            params.append('limit', String(query.limit));
+        }
+
+        if (query.sortBy && query.sortOrder) {
+            params.append('order', `${query.sortBy}_${query.sortOrder}`);
+        }
+
+        if (query.pageInfo) {
+            params.delete('published_status');
+            params.append('page_info', query.pageInfo);
+        }
+
+
+        return params.toString();
+    }
+
     //* ORDERS
     async getShopifyOrders(query: GetOrdersDto, accessToken: string) {
+        const queryParams = await this.createQueryParameters(query);
         const orders = await this.getShopifyUtilities(
             {
                 shopId: query.shopId,
                 accessToken,
-                endpoint: `orders.json?limit=${query.limit || 1}&page_info=${``}&sort_by=${query.sortBy || 'created_at'}&sort_order=${query.sortOrder || 'ASC'}`,
+                endpoint: `orders.json?${queryParams}`,
             }
         )
         return orders;
@@ -383,5 +462,26 @@ export class ShopService {
             }
         )
         return locations;
+    }
+
+    /**
+    * * Extracts next and previous page_info values from Shopify's Link header
+    */
+    private parseLinkHeader(linkHeader: string | undefined) {
+        if (!linkHeader) return { nextPageInfo: null, prevPageInfo: null };
+
+        const links = linkHeader.split(',');
+        const pagination: any = {};
+
+        for (const link of links) {
+            const [urlPart, relPart] = link.split(';');
+            const url = urlPart.trim().replace(/<(.*)>/, '$1');
+            const rel = relPart.trim().replace(/rel="(.*)"/, '$1');
+            const match = url.match(/page_info=([^&>]+)/);
+            if (match && rel === 'next') pagination.nextPageInfo = match[1];
+            if (match && rel === 'previous') pagination.prevPageInfo = match[1];
+        }
+
+        return pagination;
     }
 }

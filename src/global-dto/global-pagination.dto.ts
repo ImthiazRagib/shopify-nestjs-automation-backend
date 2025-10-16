@@ -26,4 +26,8 @@ export class GlobalPaginationDto extends GlobalQueryDto {
   @Type(() => Number)
   @Min(1)
   limit?: number = 10;
+
+  @IsOptional()
+  @Type(() => String)
+  pageInfo?: string; // for pagination
 }
