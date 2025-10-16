@@ -73,6 +73,18 @@ export class GetOrdersDto extends GlobalPaginationDto {
     @IsString()
     fulfillmentStatus?: string; // fulfilled, partial, unfulfilled, restocked
 
+    /**
+     * 
+     *  * fulfilled	✅ All items in the order have been fulfilled (completely shipped).
+        null (or "")	🚫 None of the items have been fulfilled yet.
+        partial	🟡 Some (but not all) items in the order have been fulfilled.
+        restocked	🔁 The fulfillment was canceled and the items were restocked.
+        unfulfilled	🟥 No fulfillment has been made yet (similar to null).
+        in_progress	🚚 Fulfillment is in progress (some line items are being processed).
+        on_hold	⏸️ Fulfillment is temporarily paused (rarely used, usually by 3PL apps).
+        scheduled	🕓 Fulfillment is scheduled for a later date.
+     */
+
     @IsOptional()
     @IsString()
     status?: string = 'any'; // open, closed, cancelled, any
@@ -83,10 +95,6 @@ export class QueryShopDto extends GlobalPaginationDto {
     @IsOptional()
     @IsString()
     shopId?: string;
-    //   @ApiProperty({ description: 'Access token for the shop', required: false })
-    //   @IsOptional()
-    //   @IsString()
-    //   accessToken?: string;
 
     @ApiProperty({ description: 'Name of the shop', required: false })
     @IsOptional()
