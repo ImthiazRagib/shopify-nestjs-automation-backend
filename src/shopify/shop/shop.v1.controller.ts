@@ -1,7 +1,7 @@
 import { Controller, Query, Req, UseGuards } from '@nestjs/common';
 import { ShopService } from './shop.service';
 import { Post, Body, Get, Param, ParseIntPipe, Put, Delete } from '@nestjs/common';
-import { GetOrdersDto, QueryShopProductDto } from './dto/shop.v1.dto';
+import { CreateOrderDto, GetOrdersDto, QueryShopProductDto } from './dto/shop.v1.dto';
 import { ShopifyAccessGuard } from 'src/guards/shopify-access.guard';
 
 @UseGuards(ShopifyAccessGuard)
@@ -73,6 +73,17 @@ export class ShopController {
     //     return this.shopService.getProductTypes();
     // }
 
+    @Post('orders/create')
+    createOrder(@Req() req: any, @Body() payload: CreateOrderDto) {
+        const accessToken = req.shopifyStore.accessToken;
+        const shopId = req.shopifyStore.shopId;
+        return this.shopService.createShopifyOrder({
+            shopId: shopId,
+            accessToken,
+            order: payload,
+        });
+    }
+
     @Get('orders')
     getOrders(@Req() req: any, @Query() query: GetOrdersDto) {
         const accessToken = req.shopifyStore.accessToken;
@@ -81,6 +92,24 @@ export class ShopController {
             ...query,
             shopId: shopId,
         }, accessToken,);
+    }
+
+    @Get('orders/:id/fulfillment')
+    getSingleOrderFulfillment(@Req() req: any, @Param('id', ParseIntPipe) orderId: number) {
+        return this.shopService.getShopifyOrderFulfillment({
+            shopId: req.shopifyStore.shopId,
+            accessToken: req.shopifyStore.accessToken,
+            orderId: orderId,
+        });
+    }
+
+    @Get('orders/:id/transactions')
+    getSingleOrderTransactions(@Req() req: any, @Param('id', ParseIntPipe) orderId: number) {
+        return this.shopService.getShopifyOrderTransactions({
+            shopId: req.shopifyStore.shopId,
+            accessToken: req.shopifyStore.accessToken,
+            orderId: orderId,
+        });
     }
 
     @Get('info')
