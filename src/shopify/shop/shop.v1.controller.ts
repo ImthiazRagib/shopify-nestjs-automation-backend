@@ -1,18 +1,13 @@
 import { Controller, Query, Req, UseGuards } from '@nestjs/common';
 import { ShopService } from './shop.service';
 import { Post, Body, Get, Param, ParseIntPipe, Put, Delete } from '@nestjs/common';
-import { GetOrdersDto } from './dto/shop.v1.dto';
+import { GetOrdersDto, QueryShopProductDto } from './dto/shop.v1.dto';
 import { ShopifyAccessGuard } from 'src/guards/shopify-access.guard';
 
 @UseGuards(ShopifyAccessGuard)
 @Controller('v1/shop')
 export class ShopController {
     constructor(private readonly shopService: ShopService) { }
-
-    // @Get('info')
-    // getShopInfo(@Query() query: GetOrdersDto) {
-    //     return this.shopService.getShopifyShop(query);
-    // }
 
     @Get('access-scopes')
     getShopifyAccessScopes(@Req() req: any, @Query() query: GetOrdersDto) {
@@ -38,7 +33,7 @@ export class ShopController {
     }
 
     @Get('products')
-    getProducts(@Req() req: any, @Query() query: GetOrdersDto) {
+    getProducts(@Req() req: any, @Query() query: QueryShopProductDto) {
         const accessToken = req.shopifyStore.accessToken;
         const shopId = req.shopifyStore.shopId;
         return this.shopService.getProducts({
