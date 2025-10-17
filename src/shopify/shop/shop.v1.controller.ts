@@ -1,8 +1,10 @@
 import { Controller, Query, Req, UseGuards } from '@nestjs/common';
 import { ShopService } from './shop.service';
 import { Post, Body, Get, Param, ParseIntPipe, Put, Delete } from '@nestjs/common';
-import { CreateOrderDto, GetOrdersDto, QueryShopProductDto } from './dto/shop.v1.dto';
+import { CreateOrderCapturePaymentDto, CreateOrderDto, CreateOrderFulfillmentDto, GetOrdersDto, QueryShopProductDto } from './dto/shop.v1.dto';
 import { ShopifyAccessGuard } from 'src/guards/shopify-access.guard';
+import { ClientIp } from 'src/decorators/client-ip.decorator';
+import { ShopifyStore } from 'src/decorators/shopify-store.decorator';
 
 @UseGuards(ShopifyAccessGuard)
 @Controller('v1/shop')
@@ -21,10 +23,10 @@ export class ShopController {
     }
 
     @Post('products/create')
-    createProduct(@Req() req: any, @Body() payload: any) {
+    createProduct(@ShopifyStore() shopifyStore: any, @Req() req: any, @Body() payload: any) {
         // return {...payload, accessToken: req.accessToken}
-        const accessToken = req.shopifyStore.accessToken;
-        const shopId = req.shopifyStore.shopId;
+        const accessToken = shopifyStore.accessToken;
+        const shopId = shopifyStore.shopId;
         return this.shopService.createProduct({
             shopId: shopId,
             accessToken,
@@ -33,9 +35,9 @@ export class ShopController {
     }
 
     @Get('products')
-    getProducts(@Req() req: any, @Query() query: QueryShopProductDto) {
-        const accessToken = req.shopifyStore.accessToken;
-        const shopId = req.shopifyStore.shopId;
+    getProducts(@ShopifyStore() shopifyStore: any, @Req() req: any, @Query() query: QueryShopProductDto) {
+        const accessToken = shopifyStore.accessToken;
+        const shopId = shopifyStore.shopId;
         return this.shopService.getProducts({
             ...query,
             shopId: shopId,
@@ -74,9 +76,12 @@ export class ShopController {
     // }
 
     @Post('orders/create')
-    createOrder(@Req() req: any, @Body() payload: CreateOrderDto) {
-        const accessToken = req.shopifyStore.accessToken;
-        const shopId = req.shopifyStore.shopId;
+    createOrder(@ShopifyStore() shopifyStore: any, @ClientIp() clientIp: string, @Req() req: any, @Body() payload: CreateOrderDto) {
+        const accessToken = shopifyStore.accessToken;
+        const shopId = shopifyStore.shopId;
+        // const browserIp = req.ip;
+        console.log("🚀 ~ ShopController ~ createOrder ~ clientIp:", clientIp)
+        return clientIp;
         return this.shopService.createShopifyOrder({
             shopId: shopId,
             accessToken,
@@ -84,38 +89,82 @@ export class ShopController {
         });
     }
 
+    @Post('orders/capture-payment/:id')
+    captureOrder(@ShopifyStore() shopifyStore: any, @Param('id', ParseIntPipe) orderId: number, @Body() payload: CreateOrderCapturePaymentDto) {
+        const accessToken = shopifyStore.accessToken;
+        const shopId = shopifyStore.shopId;
+        return this.shopService.capturePayment({
+            shopId: shopId,
+            accessToken,
+            orderId: orderId,
+            amount: payload.amount,
+            currency: payload.currency,
+            status: payload.status,
+            kind: payload.kind,
+        });
+    }
+
+    @Post('orders/fulfillment/:id')
+    fulfillOrder(@ShopifyStore() shopifyStore: any, @Param('id', ParseIntPipe) orderId: number, @Body() payload: CreateOrderFulfillmentDto) {
+        const accessToken = shopifyStore.accessToken;
+        const shopId = shopifyStore.shopId;
+        const fulfillmentService = shopifyStore.name || payload.fulfillmentService;
+        return this.shopService.fulfillOrder({
+            shopId: shopId,
+            accessToken,
+            orderId: orderId,
+            locationId: payload.locationId,
+            trackingNumber: payload.trackingNumber,
+            trackingCompany: payload.trackingCompany,
+            notifyCustomer: payload.notifyCustomer,
+            lineItems: payload.lineItems,
+            fulfillmentService,
+        });
+    }
+
     @Get('orders')
-    getOrders(@Req() req: any, @Query() query: GetOrdersDto) {
-        const accessToken = req.shopifyStore.accessToken;
-        const shopId = req.shopifyStore.shopId;
+    getOrders(@ShopifyStore() shopifyStore: any, @Query() query: GetOrdersDto) {
+        const accessToken = shopifyStore.accessToken;
+        const shopId = shopifyStore.shopId;
         return this.shopService.getShopifyOrders({
             ...query,
             shopId: shopId,
         }, accessToken,);
     }
 
+    @Get('orders/:id')
+    getSingleOrder(@ShopifyStore() shopifyStore: any, @Param('id', ParseIntPipe) orderId: number) {
+        const accessToken = shopifyStore.accessToken;
+        const shopId = shopifyStore.shopId;
+        return this.shopService.getSingleOrder({
+            shopId: shopId,
+            accessToken,
+            orderId: orderId,
+        });
+    }
+
     @Get('orders/:id/fulfillment')
-    getSingleOrderFulfillment(@Req() req: any, @Param('id', ParseIntPipe) orderId: number) {
+    getSingleOrderFulfillment(@ShopifyStore() shopifyStore: any, @Param('id', ParseIntPipe) orderId: number) {
         return this.shopService.getShopifyOrderFulfillment({
-            shopId: req.shopifyStore.shopId,
-            accessToken: req.shopifyStore.accessToken,
+            shopId: shopifyStore.shopId,
+            accessToken: shopifyStore.accessToken,
             orderId: orderId,
         });
     }
 
     @Get('orders/:id/transactions')
-    getSingleOrderTransactions(@Req() req: any, @Param('id', ParseIntPipe) orderId: number) {
+    getSingleOrderTransactions(@ShopifyStore() shopifyStore: any, @Param('id', ParseIntPipe) orderId: number) {
         return this.shopService.getShopifyOrderTransactions({
-            shopId: req.shopifyStore.shopId,
-            accessToken: req.shopifyStore.accessToken,
+            shopId: shopifyStore.shopId,
+            accessToken: shopifyStore.accessToken,
             orderId: orderId,
         });
     }
 
     @Get('info')
-    getShopInfo(@Req() req: any, @Query() query: GetOrdersDto) {
-        const accessToken = req.shopifyStore.accessToken;
-        const shopId = req.shopifyStore.shopId;
+    getShopInfo(@ShopifyStore() shopifyStore: any, @Query() query: GetOrdersDto) {
+        const accessToken = shopifyStore.accessToken;
+        const shopId = shopifyStore.shopId;
         return this.shopService.getShopInfo({
             ...query,
             shopId: shopId,
@@ -123,9 +172,9 @@ export class ShopController {
     }
 
     @Get('locations')
-    getLocations(@Req() req: any, @Query() query: GetOrdersDto) {
-        const accessToken = req.shopifyStore.accessToken;
-        const shopId = req.shopifyStore.shopId;
+    getLocations(@ShopifyStore() shopifyStore: any, @Query() query: GetOrdersDto) {
+        const accessToken = shopifyStore.accessToken;
+        const shopId = shopifyStore.shopId;
         return this.shopService.getAllLocations({
             ...query,
             shopId: shopId,
