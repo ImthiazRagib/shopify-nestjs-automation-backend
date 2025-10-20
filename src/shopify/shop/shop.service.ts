@@ -2,7 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { GetOrdersDto, QueryShopDto, QueryShopProductDto } from './dto/shop.v1.dto';
+import { CreateOrderDto, GetOrdersDto, QueryShopDto, QueryShopProductDto } from './dto/shop.v1.dto';
 import { ShopifyStore } from './models/shopify-shop.model';
 
 @Injectable()
@@ -13,29 +13,6 @@ export class ShopService {
         private readonly httpService: HttpService,
         @InjectModel(ShopifyStore.name) private storeModel: Model<ShopifyStore>,
     ) {
-    }
-
-    // * 🔵 Create or update shop informations in DB on application install from shopify appstore
-    async createOrUpdate(store: Partial<ShopifyStore>): Promise<ShopifyStore> {
-        const { shopId, accessToken, ...rest } = store;
-
-        const existing = await this.storeModel.findOne({ shopId });
-
-        if (existing) {
-            // * 🟡 Update only token and other fields if needed
-            existing.accessToken = accessToken || existing.accessToken;
-            Object.assign(existing, rest); // optional: update other fields too
-            await existing.save();
-            return existing;
-        }
-
-        // * 🟢 Create new shop if it doesn't exist
-        const newShop = new this.storeModel({
-            shopId,
-            accessToken,
-            ...rest,
-        });
-        return newShop.save();
     }
 
     async checkAccessTokenExist(payload: {
@@ -183,7 +160,7 @@ export class ShopService {
             );
         }
     }
-    // Access scopes: read_products,write_products,read_orders,write_orders,read_customers
+    //* Access scopes: read_products,write_products,read_orders,write_orders,read_customers
     async getShopifyAccessScopes(payload: {
         shopId: string;
         accessToken: string;
@@ -430,15 +407,362 @@ export class ShopService {
             {
                 shopId: query.shopId,
                 accessToken,
-                endpoint: `orders.json?${queryParams}`,
+                endpoint: `/orders.json?${queryParams}`,
             }
         )
         return orders;
     }
 
-    // async getOrders() {
-    //     return await this.getUsersShopifyOrders()
+    async getSingleOrder({
+        shopId,
+        orderId,
+        accessToken,
+    }: {
+        shopId: string;
+        orderId: number;
+        accessToken: string;
+    }) {
+        try {
+            const order = await this.getShopifyUtilities(
+                {
+                    shopId,
+                    accessToken,
+                    endpoint: `/orders/${orderId}.json`,
+                }
+            );
+            return order.data.order;
+        } catch (error) {
+            throw new HttpException(
+                error.message || 'Failed to fetch order',
+                error.status || HttpStatus.BAD_REQUEST
+            );
+        }
+    }
+
+    async createShopifyOrder(payload: {
+        shopId: string;
+        accessToken: string;
+        order: CreateOrderDto;
+    }) {
+        console.log("🚀 ~ ShopService ~ createShopifyOrder ~ order:", payload.order)
+        try {
+            const { shopUrl } = await this.getShopifyStoreUrl({ shopId: payload.shopId, accessToken: payload.accessToken });
+            const url = `${shopUrl}/orders.json`;
+
+            console.log("🛍️ Creating Shopify Order →", url);
+
+            const { data } = await this.httpService.axiosRef.post(
+                url,
+                { order: payload.order },
+                {
+                    headers: {
+                        "X-Shopify-Access-Token": payload.accessToken,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            return data;
+        } catch (error) {
+            console.log("🚨 Shopify Order Error:", error.response?.data || error);
+            throw new HttpException(
+                error.response?.data?.errors || "Shopify Order creation failed",
+                error.status || HttpStatus.BAD_REQUEST,
+            );
+        }
+    }
+
+
+    //* Capture Payment (Mark as Paid)
+    async capturePayment(payload: {
+        shopId: string;
+        accessToken: string;
+        orderId: number;
+        amount: string;
+        currency?: string;
+        status: string;
+        kind: string;
+    }) {
+        try {
+            const { shopUrl } = await this.getShopifyStoreUrl({
+                shopId: payload.shopId,
+                accessToken: payload.accessToken,
+            });
+
+            const url = `${shopUrl}/orders/${payload.orderId}/transactions.json`;
+            console.log("💰 Capturing Payment →", url);
+
+            const { data } = await this.httpService.axiosRef.post(
+                url,
+                {
+                    transaction: {
+                        kind: payload.kind,
+                        status: payload.status,
+                        amount: payload.amount,
+                        currency: payload.currency,
+                    },
+                },
+                {
+                    headers: {
+                        "X-Shopify-Access-Token": payload.accessToken,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            return data;
+        } catch (error) {
+            console.log("🚀 ~ ShopService ~ capturePayment ~ error:", error.response?.data || error);
+            throw new HttpException(
+                error.response?.data?.errors || "Shopify Payment capture failed",
+                error.status || HttpStatus.BAD_REQUEST,
+            );
+        }
+    }
+
+    //* Fulfill Order (Update Shipment Status)
+    async fulfillOrder(payload: {
+        shopId: string;
+        accessToken: string;
+        orderId: number;
+        locationId: number;
+        trackingNumber: string;
+        trackingCompany: string;
+        fulfillmentService: string;
+        notifyCustomer: boolean;
+        lineItems: { id: number; quantity: number }[];
+    }) {
+        try {
+            const { shopUrl } = await this.getShopifyStoreUrl({
+                shopId: payload.shopId,
+                accessToken: payload.accessToken,
+            });
+
+            const url = `${shopUrl}/orders/fulfillments.json`;
+            console.log("📦 Fulfilling Order →", url);
+
+            const { data } = await this.httpService.axiosRef.post(
+                url,
+                {
+                    fulfillment: {
+                        order_id: payload.orderId,
+                        location_id: payload.locationId,
+                        tracking_number: payload.trackingNumber,
+                        tracking_company: payload.trackingCompany,
+                        notify_customer: payload.notifyCustomer,
+                        fulfillment_service: payload.fulfillmentService,
+                        line_items: payload.lineItems,
+                    },
+                },
+                {
+                    headers: {
+                        "X-Shopify-Access-Token": payload.accessToken,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            return data;
+        } catch (error) {
+            console.log("🚨 Shopify Order Fulfillment Error:", error.response?.data || error);
+            throw new HttpException(
+                error.response?.data?.errors || "Shopify Order Fulfillment creation failed",
+                error.status || HttpStatus.BAD_REQUEST,
+            );
+        }
+    }
+
+    async requestShopifyFulfillment(payload: {
+        shopId: string;
+        accessToken: string;
+        orderId: number;
+        locationId?: number;
+        trackingUrl?: string;
+        trackingNumber?: string;
+        trackingCompany?: string;
+        notifyCustomer?: boolean;
+        lineItems: { id: number }[];
+    }) {
+        try {
+            const { shopUrl } = await this.getShopifyStoreUrl({
+                shopId: payload.shopId,
+                accessToken: payload.accessToken,
+            });
+
+            const url = `${shopUrl}/orders/${payload.orderId}/fulfillments.json`;
+
+            const fulfillmentPayload = {
+                fulfillment: {
+                    line_items: payload.lineItems,
+                    tracking_company: payload.trackingCompany || 'Manual Carrier',
+                    tracking_number: payload.trackingNumber || 'N/A',
+                    tracking_url: payload.trackingUrl || '',
+                    notify_customer: payload.notifyCustomer ?? true,
+                    location_id: payload.locationId,
+                },
+            };
+
+            console.log('📦 Requesting Shopify Fulfillment →', url, fulfillmentPayload);
+
+            const { data } = await this.httpService.axiosRef.post(url, fulfillmentPayload, {
+                headers: {
+                    'X-Shopify-Access-Token': payload.accessToken,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            console.log('✅ Fulfillment Response:', data);
+            return data;
+        } catch (error) {
+            console.error('🚨 Shopify Fulfillment Error:', error.response?.data || error.message);
+            throw new HttpException(
+                error.response?.data?.errors || 'Shopify fulfillment request failed',
+                error.response?.status || HttpStatus.BAD_REQUEST,
+            );
+        }
+    }
+
+    async getShopifyOrderFulfillment(payload: {
+        shopId: string;
+        accessToken: string;
+        orderId: string | number;
+    }) {
+        try {
+            const { shopUrl } = await this.getShopifyStoreUrl({ shopId: payload.shopId, accessToken: payload.accessToken });
+            const url = `${shopUrl}/orders/${payload.orderId}/fulfillments.json`;
+
+            console.log("🛍️ Updating Shopify Order Fulfillment →", url);
+
+            const { data } = await this.httpService.axiosRef.get(
+                url,
+                {
+                    headers: {
+                        "X-Shopify-Access-Token": payload.accessToken,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            return data;
+        } catch (error) {
+            console.log("🚨 Shopify Order Fulfillment Error:", error.response?.data || error);
+            throw new HttpException(
+                error.response?.data?.errors || "Shopify Order Fulfillment creation failed",
+                error.status || HttpStatus.BAD_REQUEST,
+            );
+        }
+    }
+
+    async startAndSingleCompleteShopifyOrder(payload: {
+        shopId: string;
+        accessToken: string;
+        order: CreateOrderDto;
+        amount: string;
+        locationId: number;
+        lineItems: { id: number; quantity: number }[];
+    }) {
+        console.log("🛍️ Step 1: Create Order");
+        const createdOrder = await this.createShopifyOrder({
+            shopId: payload.shopId,
+            accessToken: payload.accessToken,
+            order: payload.order,
+        });
+
+        const orderId = createdOrder.order.id;
+
+        console.log("💳 Step 2: Capture Payment");
+        await this.capturePayment({
+            shopId: payload.shopId,
+            accessToken: payload.accessToken,
+            orderId,
+            amount: payload.amount,
+            currency: "USD", // payload.order.currency,
+            status: "success",
+            kind: "sale",
+        });
+
+        console.log("🚚 Step 3: Fulfill Order");
+        await this.fulfillOrder({
+            shopId: payload.shopId,
+            accessToken: payload.accessToken,
+            orderId,
+            locationId: payload.locationId,
+            lineItems: payload.lineItems,
+            trackingNumber: createdOrder.tracking_number || "N/A",
+            trackingCompany: createdOrder.tracking_company || "N/A",
+            notifyCustomer: createdOrder.notify_customer || true,
+            fulfillmentService: createdOrder.fulfillment_service || "manual",
+        });
+
+        console.log("✅ Order Completed Successfully!");
+        return { message: "Order completed", orderId };
+    }
+
+
+    // async updateShopifyOrder(payload: {
+    //     shopId: string;
+    //     accessToken: string;
+    //     orderId: string | number;
+    //     orderData: any;
+    // }) {
+    //     try {
+    //         const { shopUrl } = await this.getShopifyStoreUrl({ shopId: payload.shopId, accessToken: payload.accessToken });
+    //         const url = `${shopUrl}/orders/${payload.orderId}.json`;
+
+    //         console.log("🛍️ Updating Shopify Order →", url);
+
+    //         const { data } = await this.httpService.axiosRef.put(
+    //             url,
+    //             { order: payload.orderData },
+    //             {
+    //                 headers: {
+    //                     "X-Shopify-Access-Token": payload.accessToken,
+    //                     "Content-Type": "application/json",
+    //                 },
+    //             }
+    //         );
+
+    //         return data;
+    //     } catch (error) {
+    //         console.log("🚨 Shopify Order Error:", error.response?.data || error);
+    //         throw new HttpException(
+    //             error.response?.data?.errors || "Shopify Order creation failed",
+    //             error.status || HttpStatus.BAD_REQUEST,
+    //         );
+    //     }
     // }
+
+
+    async getShopifyOrderTransactions(payload: {
+        shopId: string;
+        accessToken: string;
+        orderId: string | number;
+    }) {
+        try {
+            const { shopUrl } = await this.getShopifyStoreUrl({ shopId: payload.shopId, accessToken: payload.accessToken });
+            const url = `${shopUrl}/orders/${payload.orderId}/transactions.json`;
+
+            console.log("🛍️ Updating Shopify Order Transactions →", url);
+
+            const { data } = await this.httpService.axiosRef.get(
+                url,
+                {
+                    headers: {
+                        "X-Shopify-Access-Token": payload.accessToken,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            return data;
+        } catch (error) {
+            console.log("🚨 Shopify Order Fulfillment Error:", error.response?.data || error);
+            throw new HttpException(
+                error.response?.data?.errors || "Shopify Order Fulfillment creation failed",
+                error.status || HttpStatus.BAD_REQUEST,
+            );
+        }
+    }
 
     //* STORES
     async getShopInfo(query: QueryShopDto, accessToken: string) {

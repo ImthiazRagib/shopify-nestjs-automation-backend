@@ -17,6 +17,7 @@ export class ShopifyOAuthService {
         @InjectModel(ShopifyStore.name) private storeModel: Model<ShopifyStore>,
     ) { }
 
+    // * 🔵 Create or update shop informations in DB on application install from shopify appstore
     // async createOrUpdate(store: Partial<ShopifyStore>): Promise<ShopifyStore> {
     //     return this.storeModel.findOneAndUpdate(
     //         { shopId: store.shopId },
@@ -55,71 +56,56 @@ export class ShopifyOAuthService {
     }
 
 
-    async create(payload: any) {
-        console.log("🚀 ~ ShopifyOAuthService ~ create ~ payload:", payload)
-        return {
-            payload,
-        };
-    }
+    // /**
+    //  * Step 1: Redirect merchant to Shopify authorization URL
+    //  */
+    // getAuthUrl(shop: string): string {
+    //     // return shop
+    //     const state = crypto.randomBytes(16).toString('hex');
+    //     const params = querystring.stringify({
+    //         client_id: this.clientId,
+    //         scope: this.scopes,
+    //         redirect_uri: this.redirectUri,
+    //         state,
+    //         'grant_options[]': 'per-user',
+    //     });
 
-    async verify(payload: any) {
-        console.log("🚀 ~ ShopifyOAuthService ~ verify ~ payload:", payload)
-        return {
-            payload,
-        };
-    }
+    //     const authUrl = `https://${shop}/admin/oauth/authorize?${params}`
+    //     // const params = `client_id=${this.clientId}&scope=${this.scopes}&state=${state}&grant_options=${JSON.stringify(['per-user'])}&redirect_uri=${this.redirectUri}`
+    //     console.log("🚀 ~ ShopifyOAuthService ~ getAuthUrl ~ authUrl:", authUrl)
 
+    //     return authUrl;
+    // }
 
-    /**
-     * Step 1: Redirect merchant to Shopify authorization URL
-     */
-    getAuthUrl(shop: string): string {
-        // return shop
-        const state = crypto.randomBytes(16).toString('hex');
-        const params = querystring.stringify({
-            client_id: this.clientId,
-            scope: this.scopes,
-            redirect_uri: this.redirectUri,
-            state,
-            'grant_options[]': 'per-user',
-        });
+    // /**
+    //  * Step 2: Exchange code for access token
+    //  */
+    // async getAccessToken(shop: string, code: string): Promise<string> {
+    //     try {
+    //         const res = await axios.post(`https://${shop}/admin/oauth/access_token`, {
+    //             client_id: this.clientId,
+    //             client_secret: this.clientSecret,
+    //             code,
+    //             scope: this.scopes,
+    //         });
+    //         return res.data.access_token;
+    //     } catch (error) {
+    //         console.error('Access token exchange failed:', error.response?.data || error.message);
+    //         throw new HttpException('Failed to get access token', HttpStatus.BAD_REQUEST);
+    //     }
+    // }
 
-        const authUrl = `https://${shop}/admin/oauth/authorize?${params}`
-        // const params = `client_id=${this.clientId}&scope=${this.scopes}&state=${state}&grant_options=${JSON.stringify(['per-user'])}&redirect_uri=${this.redirectUri}`
-        console.log("🚀 ~ ShopifyOAuthService ~ getAuthUrl ~ authUrl:", authUrl)
-
-        return authUrl;
-    }
-
-    /**
-     * Step 2: Exchange code for access token
-     */
-    async getAccessToken(shop: string, code: string): Promise<string> {
-        try {
-            const res = await axios.post(`https://${shop}/admin/oauth/access_token`, {
-                client_id: this.clientId,
-                client_secret: this.clientSecret,
-                code,
-                scope: this.scopes,
-            });
-            return res.data.access_token;
-        } catch (error) {
-            console.error('Access token exchange failed:', error.response?.data || error.message);
-            throw new HttpException('Failed to get access token', HttpStatus.BAD_REQUEST);
-        }
-    }
-
-    /**
-     * Step 3: Verify HMAC to ensure request integrity
-     */
-    verifyHmac(query: any): boolean {
-        const { hmac, ...params } = query;
-        const message = querystring.stringify(params);
-        const generatedHmac = crypto
-            .createHmac('sha256', this.clientSecret!)
-            .update(message)
-            .digest('hex');
-        return generatedHmac === hmac;
-    }
+    // /**
+    //  * Step 3: Verify HMAC to ensure request integrity
+    //  */
+    // verifyHmac(query: any): boolean {
+    //     const { hmac, ...params } = query;
+    //     const message = querystring.stringify(params);
+    //     const generatedHmac = crypto
+    //         .createHmac('sha256', this.clientSecret!)
+    //         .update(message)
+    //         .digest('hex');
+    //     return generatedHmac === hmac;
+    // }
 }
 
