@@ -317,6 +317,37 @@ export class RequestShopifyFulfillmentDto {
   @IsNumber()
   locationId?: number;
 }
+export class UpdateFulfillmentDto {
+
+  @ApiProperty({
+    description: 'Fulfillment status (pending, open, success, cancelled, error, failure)',
+    example: 'success',
+  })
+  @IsString()
+  @IsNotEmpty()
+  status: string;
+
+  @ApiProperty({ description: 'Shipment status (in_transit, out_for_delivery, delivered, failure)', required: false })
+  @IsString()
+  @IsNotEmpty()
+  shipmentStatus: string;
+
+  @ApiProperty({ description: 'Tracking number', required: false })
+  @IsString()
+  @IsNotEmpty()
+  trackingNumber: string;
+
+  @ApiProperty({ description: 'Tracking company', required: false })
+  @IsString()
+  @IsOptional()
+  trackingCompany?: string;
+
+  @ApiProperty({ description: 'Tracking URL', required: false })
+  @IsString()
+  @IsOptional()
+  trackingUrl?: string;
+}
+
 
 export class QueryShopDto extends GlobalPaginationDto {
   @ApiProperty({ description: 'Unique identifier of the shop', required: false })

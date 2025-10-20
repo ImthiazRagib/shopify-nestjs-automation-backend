@@ -622,6 +622,56 @@ export class ShopService {
         }
     }
 
+    async updateShopifyFulfillmentStatus(payload: {
+        shopId: string;
+        accessToken: string;
+        orderId: number;
+        fulfillmentId: number;
+        status: string;
+        shipmentStatus: string;
+        trackingNumber: string;
+        trackingCompany?: string;
+        trackingUrl?: string;
+    }) {
+        try {
+            const { shopUrl } = await this.getShopifyStoreUrl({
+                shopId: payload.shopId,
+                accessToken: payload.accessToken,
+            });
+
+    const url = `${shopUrl}/orders/${payload.orderId}/fulfillments/${payload.fulfillmentId}.json`;
+
+            const body = {
+                fulfillment: {
+                    status: payload.status,
+                    shipment_status: payload.shipmentStatus,
+                    tracking_number: payload.trackingNumber,
+                    tracking_company: payload.trackingCompany || '',
+                    tracking_url: payload.trackingUrl || '',
+                },
+            };
+
+    console.log('📦 Updating Shopify Fulfillment →', url, body);
+
+    const { data } = await this.httpService.axiosRef.put(url, body, {
+      headers: {
+        'X-Shopify-Access-Token': payload.accessToken,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log('✅ Shopify Fulfillment Updated:', data);
+    return data;
+  } catch (error) {
+    console.error('🚨 Shopify Fulfillment Update Error:', error.response?.data || error.message);
+    throw new HttpException(
+      error.response?.data?.errors || 'Shopify fulfillment update failed',
+      error.response?.status || HttpStatus.BAD_REQUEST,
+    );
+  }
+}
+
+
     async getShopifyOrderFulfillment(payload: {
         shopId: string;
         accessToken: string;

@@ -1,7 +1,7 @@
 import { Controller, Query, Req, UseGuards } from '@nestjs/common';
 import { ShopService } from './shop.service';
 import { Post, Body, Get, Param, ParseIntPipe, Put, Delete } from '@nestjs/common';
-import { CreateOrderCapturePaymentDto, CreateOrderDto, CreateOrderFulfillmentDto, GetOrdersDto, QueryShopProductDto, RequestShopifyFulfillmentDto } from './dto/shop.v1.dto';
+import { CreateOrderCapturePaymentDto, CreateOrderDto, CreateOrderFulfillmentDto, GetOrdersDto, QueryShopProductDto, RequestShopifyFulfillmentDto, UpdateFulfillmentDto } from './dto/shop.v1.dto';
 import { ShopifyAccessGuard } from 'src/guards/shopify-access.guard';
 import { ClientIp } from 'src/decorators/client-ip.decorator';
 import { ShopifyStore } from 'src/decorators/shopify-store.decorator';
@@ -161,6 +161,28 @@ export class ShopController {
             accessToken,
             orderId: orderId,
             ...payload,
+        });
+    }
+
+    @Put('orders/:orderId/fulfillments/:fulfillmentId')
+    updateShopifyFulfillmentStatus(
+        @ShopifyStore() shopifyStore: any,
+        @Param('orderId', ParseIntPipe) orderId: number,
+        @Param('fulfillmentId', ParseIntPipe) fulfillmentId: number,
+        @Body() payload: UpdateFulfillmentDto
+    ) {
+        const accessToken = shopifyStore.accessToken;
+        const shopId = shopifyStore.shopId;
+        return this.shopService.updateShopifyFulfillmentStatus({
+            shopId,
+            accessToken,
+            orderId,
+            fulfillmentId,
+            status: payload.status,
+            shipmentStatus: payload.shipmentStatus,
+            trackingNumber: payload.trackingNumber,
+            trackingCompany: payload.trackingCompany || '',
+            trackingUrl: payload.trackingUrl || '',
         });
     }
 
