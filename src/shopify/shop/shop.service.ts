@@ -15,29 +15,6 @@ export class ShopService {
     ) {
     }
 
-    // * 🔵 Create or update shop informations in DB on application install from shopify appstore
-    async createOrUpdate(store: Partial<ShopifyStore>): Promise<ShopifyStore> {
-        const { shopId, accessToken, ...rest } = store;
-
-        const existing = await this.storeModel.findOne({ shopId });
-
-        if (existing) {
-            // * 🟡 Update only token and other fields if needed
-            existing.accessToken = accessToken || existing.accessToken;
-            Object.assign(existing, rest); // optional: update other fields too
-            await existing.save();
-            return existing;
-        }
-
-        // * 🟢 Create new shop if it doesn't exist
-        const newShop = new this.storeModel({
-            shopId,
-            accessToken,
-            ...rest,
-        });
-        return newShop.save();
-    }
-
     async checkAccessTokenExist(payload: {
         accessToken: string;
     }) {
@@ -591,6 +568,56 @@ export class ShopService {
             throw new HttpException(
                 error.response?.data?.errors || "Shopify Order Fulfillment creation failed",
                 error.status || HttpStatus.BAD_REQUEST,
+            );
+        }
+    }
+
+    async requestShopifyFulfillment(payload: {
+        shopId: string;
+        accessToken: string;
+        orderId: number;
+        locationId?: number;
+        trackingUrl?: string;
+        trackingNumber?: string;
+        trackingCompany?: string;
+        notifyCustomer?: boolean;
+        lineItems: { id: number }[];
+    }) {
+        try {
+            const { shopUrl } = await this.getShopifyStoreUrl({
+                shopId: payload.shopId,
+                accessToken: payload.accessToken,
+            });
+
+            const url = `${shopUrl}/orders/${payload.orderId}/fulfillments.json`;
+
+            const fulfillmentPayload = {
+                fulfillment: {
+                    line_items: payload.lineItems,
+                    tracking_company: payload.trackingCompany || 'Manual Carrier',
+                    tracking_number: payload.trackingNumber || 'N/A',
+                    tracking_url: payload.trackingUrl || '',
+                    notify_customer: payload.notifyCustomer ?? true,
+                    location_id: payload.locationId,
+                },
+            };
+
+            console.log('📦 Requesting Shopify Fulfillment →', url, fulfillmentPayload);
+
+            const { data } = await this.httpService.axiosRef.post(url, fulfillmentPayload, {
+                headers: {
+                    'X-Shopify-Access-Token': payload.accessToken,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            console.log('✅ Fulfillment Response:', data);
+            return data;
+        } catch (error) {
+            console.error('🚨 Shopify Fulfillment Error:', error.response?.data || error.message);
+            throw new HttpException(
+                error.response?.data?.errors || 'Shopify fulfillment request failed',
+                error.response?.status || HttpStatus.BAD_REQUEST,
             );
         }
     }

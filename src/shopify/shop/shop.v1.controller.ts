@@ -1,7 +1,7 @@
 import { Controller, Query, Req, UseGuards } from '@nestjs/common';
 import { ShopService } from './shop.service';
 import { Post, Body, Get, Param, ParseIntPipe, Put, Delete } from '@nestjs/common';
-import { CreateOrderCapturePaymentDto, CreateOrderDto, CreateOrderFulfillmentDto, GetOrdersDto, QueryShopProductDto } from './dto/shop.v1.dto';
+import { CreateOrderCapturePaymentDto, CreateOrderDto, CreateOrderFulfillmentDto, GetOrdersDto, QueryShopProductDto, RequestShopifyFulfillmentDto } from './dto/shop.v1.dto';
 import { ShopifyAccessGuard } from 'src/guards/shopify-access.guard';
 import { ClientIp } from 'src/decorators/client-ip.decorator';
 import { ShopifyStore } from 'src/decorators/shopify-store.decorator';
@@ -149,6 +149,18 @@ export class ShopController {
             shopId: shopifyStore.shopId,
             accessToken: shopifyStore.accessToken,
             orderId: orderId,
+        });
+    }
+
+    @Post('orders/:id/fulfillment')
+    requestShopifyFulfillment(@ShopifyStore() shopifyStore: any, @Param('id', ParseIntPipe) orderId: number, @Body() payload: RequestShopifyFulfillmentDto) {
+        const accessToken = shopifyStore.accessToken;
+        const shopId = shopifyStore.shopId;
+        return this.shopService.requestShopifyFulfillment({
+            shopId: shopId,
+            accessToken,
+            orderId: orderId,
+            ...payload,
         });
     }
 
