@@ -32,6 +32,12 @@ export class ShopifyStore {
 
     @Prop({ required: true })
     currencyCode: string;
+
+    @Prop({ type: Object, default: {} })
+    session: Record<string, any>;
+
+    @Prop({ type: Object, default: {} })
+    metaData: Record<string, any>;
 }
 
 export const ShopifyStoreSchema = SchemaFactory.createForClass(ShopifyStore);
