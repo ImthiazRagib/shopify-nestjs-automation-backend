@@ -106,10 +106,13 @@ export class ShopifyOAuthService {
     verifyHmac(query: any): boolean {
         const { hmac, ...params } = query;
         const message = querystring.stringify(params);
+        console.log("🚀 ~ ShopifyOAuthService ~ verifyHmac ~ message:", message)
+        console.log("🚀 ~ ShopifyOAuthService ~ verifyHmac ~ query:", query)
         const generatedHmac = crypto
             .createHmac('sha256', this.clientSecret!)
             .update(message)
             .digest('hex');
+        console.log("🚀 ~ ShopifyOAuthService ~ verifyHmac ~ generatedHmac:", generatedHmac, hmac === generatedHmac)
         return generatedHmac === hmac;
     }
 }
