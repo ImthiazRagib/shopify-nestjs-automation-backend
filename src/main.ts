@@ -50,9 +50,9 @@ async function bootstrap() {
       transform: true, // transforms payloads to DTO classes
     }),
   );
-
-  await app.listen(process.env.PORT ?? 3001, () => {
-    console.log(`🚀 Server listening on port ${process.env.PORT ?? 3000}`);
+const port = process.env.PORT ?? 3001;
+  await app.listen(port, () => {
+    console.log(`🚀 Server listening on port ${port}`);
   });
 }
 bootstrap();

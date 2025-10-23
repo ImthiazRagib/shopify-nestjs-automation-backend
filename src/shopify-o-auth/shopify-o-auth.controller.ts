@@ -18,39 +18,38 @@ export class ShopifyOAuthController {
   // async verify(@Body() body: any) {
   //   return this.shopifyOAuthService.verify(body);
   // }
-  // /**
-  //  * Step 1: Redirect to Shopify OAuth page
-  //  * @example GET /shopify-o-auth/install?shop=your-store.myshopify.com
-  //  */
-  // @Get('install')
-  // async install(@Query() query: InstallAppDto) {
-  //   if (!query.shop) throw new HttpException('Missing shop parameter', HttpStatus.BAD_REQUEST);
-  //   const authUrl = this.shopifyOAuthService.getAuthUrl(query.shop);
-  //   return { status: HttpStatus.FOUND, url: authUrl };
-  // }
+  /**
+   * Step 1: Redirect to Shopify OAuth page
+   * @example GET /shopify-o-auth/install?shop=your-store.myshopify.com
+   */
+  @Get('install')
+  async install() {
+    //@Query() query: InstallAppDto if (!query.shop) throw new HttpException('Missing shop parameter', HttpStatus.BAD_REQUEST);  query.shop
+    const authUrl = this.shopifyOAuthService.getAuthUrl();
+    return { status: HttpStatus.FOUND, url: authUrl };
+  }
 
-  // /**
-  //  * Step 2: Shopify callback URL
-  //  */
-  // @Get('callback')
-  // async callback(@Query() query: any) {
-  //   console.log("🚀 ~ ShopifyOAuthController ~ callback ~ query:", query)
-  //   const { shop, code, hmac } = query;
+  /**
+   * Step 2: Shopify callback URL
+   */
+  @Get('callback')
+  async callback(@Query() query: any) {
+    console.log("🚀 ~ ShopifyOAuthController ~ callback ~ query:", query)
+    const { shop, code, hmac } = query;
 
-  //   if (!shop || !code || !hmac)
-  //     throw new HttpException('Missing parameters', HttpStatus.BAD_REQUEST);
+    if (!shop || !code || !hmac)
+      throw new HttpException('Missing parameters', HttpStatus.BAD_REQUEST);
 
-  //   // Verify HMAC
-  //   const valid = this.shopifyOAuthService.verifyHmac(query);
-  //   if (!valid)
-  //     throw new HttpException('Invalid HMAC signature', HttpStatus.FORBIDDEN);
+    // Verify HMAC
+    const valid = this.shopifyOAuthService.verifyHmac(query);
+    if (!valid)
+      throw new HttpException('Invalid HMAC signature', HttpStatus.FORBIDDEN);
 
-  //   // Get Access Token
-  //   const accessToken = await this.shopifyOAuthService.getAccessToken(shop, code);
+    // // Get Access Token
+    // const accessToken = await this.shopifyOAuthService.getAccessToken(shop, code);
 
-  //   // Store accessToken in DB or cache for future use
-  //   console.log(`✅ Access Token for ${shop}:`, accessToken);
+    // Store accessToken in DB or cache for future use
 
-  //   return { shop, accessToken };
-  // }
+    return query;
+  }
 }

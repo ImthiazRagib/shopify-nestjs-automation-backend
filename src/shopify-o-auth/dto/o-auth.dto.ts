@@ -1,8 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class InstallAppDto {
-    @IsNotEmpty({ message: 'Shop domain is required, e.g. my-store.myshopify.com' })
+    // @IsNotEmpty({ message: 'Shop domain is required, e.g. my-store.myshopify.com' })
+    @IsOptional()
     @IsString()
     @ApiProperty({ example: 'my-store.myshopify.com', description: 'Shop domain in the format {shop}.myshopify.com' })
     shop: string;
