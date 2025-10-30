@@ -1,7 +1,7 @@
 import { Controller, Query, Req, UseGuards } from '@nestjs/common';
 import { ShopService } from './shop.service';
 import { Post, Body, Get, Param, ParseIntPipe, Put, Delete } from '@nestjs/common';
-import { CreateOrderCapturePaymentDto, CreateOrderDto, CreateOrderFulfillmentDto, GetOrdersDto, QueryShopProductDto, RequestShopifyFulfillmentDto, UpdateFulfillmentDto } from './dto/shop.v1.dto';
+import { CreateOrderCapturePaymentDto, CreateOrderDto, CreateOrderFulfillmentDto, GetOrdersDto, QueryShopProductDto, RequestShopifyFulfillmentDto, UpdateFulfillmentDto, UploadThemeDto } from './dto/shop.v1.dto';
 import { ShopifyAccessGuard } from 'src/guards/shopify-access.guard';
 import { ClientIp } from 'src/decorators/client-ip.decorator';
 import { ShopifyStore } from 'src/decorators/shopify-store.decorator';
@@ -203,6 +203,35 @@ export class ShopController {
             ...query,
             shopId: shopId,
         }, accessToken,);
+    }
+
+    @Get('themes')
+    listOfThemes(@ShopifyStore() shopifyStore: any) {
+        const accessToken = shopifyStore.accessToken;
+        const shopId = shopifyStore.shopId;
+        return this.shopService.listOfThemes(shopId, accessToken);
+    }
+
+    @Post('themes/:themeId/publish')
+    publishTheme(@ShopifyStore() shopifyStore: any, @Param('themeId', ParseIntPipe) themeId: number) {
+        const accessToken = shopifyStore.accessToken;
+        const shopId = shopifyStore.shopId;
+        return this.shopService.publishTheme({
+            shopId: shopId,
+            accessToken,
+            themeId: themeId,
+        });
+    }
+
+    @Post('themes/upload')
+    uploadTheme(@ShopifyStore() shopifyStore: any, @Body() payload: UploadThemeDto) {
+        const accessToken = shopifyStore.accessToken;
+        const shopId = shopifyStore.shopId;
+        return this.shopService.uploadTheme({
+            shopId: shopId,
+            accessToken,
+            ...payload,
+        });
     }
 
     @Get('locations')

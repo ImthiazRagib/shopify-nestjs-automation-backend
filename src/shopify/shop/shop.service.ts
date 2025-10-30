@@ -4,6 +4,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreateOrderDto, GetOrdersDto, QueryShopDto, QueryShopProductDto } from './dto/shop.v1.dto';
 import { ShopifyStore } from './models/shopify-shop.model';
+import { ShopifyThemeRole } from '../enum';
+import * as fs from 'fs';
 
 @Injectable()
 export class ShopService {
@@ -639,7 +641,7 @@ export class ShopService {
                 accessToken: payload.accessToken,
             });
 
-    const url = `${shopUrl}/orders/${payload.orderId}/fulfillments/${payload.fulfillmentId}.json`;
+            const url = `${shopUrl}/orders/${payload.orderId}/fulfillments/${payload.fulfillmentId}.json`;
 
             const body = {
                 fulfillment: {
@@ -651,25 +653,25 @@ export class ShopService {
                 },
             };
 
-    console.log('📦 Updating Shopify Fulfillment →', url, body);
+            console.log('📦 Updating Shopify Fulfillment →', url, body);
 
-    const { data } = await this.httpService.axiosRef.put(url, body, {
-      headers: {
-        'X-Shopify-Access-Token': payload.accessToken,
-        'Content-Type': 'application/json',
-      },
-    });
+            const { data } = await this.httpService.axiosRef.put(url, body, {
+                headers: {
+                    'X-Shopify-Access-Token': payload.accessToken,
+                    'Content-Type': 'application/json',
+                },
+            });
 
-    console.log('✅ Shopify Fulfillment Updated:', data);
-    return data;
-  } catch (error) {
-    console.error('🚨 Shopify Fulfillment Update Error:', error.response?.data || error.message);
-    throw new HttpException(
-      error.response?.data?.errors || 'Shopify fulfillment update failed',
-      error.response?.status || HttpStatus.BAD_REQUEST,
-    );
-  }
-}
+            console.log('✅ Shopify Fulfillment Updated:', data);
+            return data;
+        } catch (error) {
+            console.error('🚨 Shopify Fulfillment Update Error:', error.response?.data || error.message);
+            throw new HttpException(
+                error.response?.data?.errors || 'Shopify fulfillment update failed',
+                error.response?.status || HttpStatus.BAD_REQUEST,
+            );
+        }
+    }
 
 
     async getShopifyOrderFulfillment(payload: {
@@ -826,7 +828,7 @@ export class ShopService {
         return shopInfo;
     }
 
-    // //* LOCATIONS
+    //* LOCATIONS
     async getAllLocations(query: QueryShopDto, accessToken: string) {
         const locations = await this.getShopifyUtilities(
             {
@@ -837,6 +839,107 @@ export class ShopService {
         )
         return locations;
     }
+
+    //* Themes
+    async uploadTheme(payload: {
+        shopId: string;
+        accessToken: string;
+        name: string;
+        zipUrl: string;
+        themeRole: ShopifyThemeRole;
+    }) {
+
+        const { shopId, accessToken, name, zipUrl, themeRole } = payload;
+        const { shopUrl } = await this.getShopifyStoreUrl({
+            shopId,
+            accessToken,
+        });
+
+        const form = new (require('form-data'))();
+        form.append('theme[role]', themeRole); // or 'main' if publishing immediately
+        form.append('theme[name]', name);
+        form.append('theme[src]', fs.createReadStream(zipUrl));
+
+        const url = `${shopUrl}/themes.json`;
+        console.log("📦 Uploading Theme →", url);
+
+
+        try {
+            const { data } = await this.httpService.axiosRef.post(
+                url,
+                // {
+                //     theme: {
+                //         name,
+                //         src: zipUrl, // must be public
+                //         role: themeRole,
+                //     },
+                // },
+                form,
+                {
+                    headers: {
+                        'X-Shopify-Access-Token': accessToken,
+                        ...form.getHeaders(),
+                    },
+                },
+            );
+
+            return data.theme; // returns theme ID, name, role, etc.
+        } catch (error) {
+            console.error('🚨 Shopify Theme Upload Error:', error.response?.data || error);
+            throw new HttpException(
+                error.response?.data?.errors || 'Theme upload failed',
+                error.response?.status || HttpStatus.BAD_REQUEST,
+            );
+        }
+    }
+
+    async publishTheme(payload: {
+        shopId: string;
+        accessToken: string;
+        themeId: number;
+    }) {
+        const { shopId, accessToken, themeId } = payload;
+        const { shopUrl } = await this.getShopifyStoreUrl({
+            shopId,
+            accessToken,
+        });
+
+        const url = `${shopUrl}/themes/${themeId}.json`;
+        console.log("📦 Publishing Theme →", url);
+
+        try {
+            const { data } = await this.httpService.axiosRef.put(
+                url,
+                { theme: { role: 'main' } },
+                {
+                    headers: {
+                        'X-Shopify-Access-Token': accessToken,
+                        'Content-Type': 'application/json',
+                    },
+                },
+            );
+            return data.theme;
+        } catch (error) {
+            console.error('🚨 Shopify Theme Publish Error:', error.response?.data || error);
+            throw new HttpException(
+                error.response?.data?.errors || 'Theme publish failed',
+                error.response?.status || HttpStatus.BAD_REQUEST,
+            );
+        }
+    }
+
+
+  async listOfThemes(shopId: string, accessToken: string) {
+    const { shopUrl } = await this.getShopifyStoreUrl({
+      shopId,
+      accessToken,
+    });
+    const url = `${shopUrl}/themes.json`;
+    const { data } = await this.httpService.axiosRef.get(url, {
+      headers: { 'X-Shopify-Access-Token': accessToken },
+    });
+    return data.themes;
+  }
 
     /**
     * * Extracts next and previous page_info values from Shopify's Link header

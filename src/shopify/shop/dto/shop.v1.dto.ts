@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsOptional, IsArray, IsNumber, IsBoolean } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsArray, IsNumber, IsBoolean, IsEnum } from 'class-validator';
 import { GlobalPaginationDto } from 'src/global-dto/global-pagination.dto';
+import { ShopifyThemeRole } from 'src/shopify/enum';
 
 export class QueryShopProductDto extends GlobalPaginationDto {
   @ApiProperty({ description: 'Unique identifier of the shop', required: false })
@@ -377,3 +378,17 @@ export class CreateProductDto {
   product: Record<string, any>;
 }
 
+export class UploadThemeDto {
+  @ApiProperty({ description: 'Theme name', required: true })
+  @IsNotEmpty()
+  name: string;
+
+  @ApiProperty({ description: 'Public URL of the theme ZIP file', required: true })
+  @IsNotEmpty()
+  zipUrl: string;
+
+  @ApiProperty({ description: 'Role to assign to the theme', required: true, enum: ShopifyThemeRole })
+  @IsNotEmpty()
+  @IsEnum(ShopifyThemeRole)
+  themeRole: ShopifyThemeRole;
+}
