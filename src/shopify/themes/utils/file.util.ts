@@ -28,3 +28,19 @@ export const ensureDir = (dirPath: string): void => {
 export const deleteFolderRecursive = (dirPath: string): void => {
   if (fs.existsSync(dirPath)) fs.rmSync(dirPath, { recursive: true, force: true });
 };
+
+export function setNestedValue(obj: any, path: string, value: any) {
+    const keys = path.split('.');
+    let current = obj;
+
+    keys.forEach((key, index) => {
+        if (index === keys.length - 1) {
+            current[key] = value; // set the value
+        } else {
+            if (!(key in current) || typeof current[key] !== 'object') {
+                current[key] = {}; // create nested object if missing
+            }
+            current = current[key];
+        }
+    });
+}

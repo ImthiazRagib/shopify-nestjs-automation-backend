@@ -6,6 +6,7 @@ import {
     readJson,
     writeJson,
     deleteFolderRecursive,
+    setNestedValue,
 } from './utils/file.util';
 import { unzipFile, zipFolder } from './utils/zip.util';
 // import { UpdateThemeDto } from './dto/update-theme.dto';
@@ -232,6 +233,99 @@ export class ThemesService {
     /**
        * Update a local theme zip/folder and save updated zip locally
        */
+    // async updateThemeLocally({
+    //     themeFilePath, // can be .zip or folder
+    //     jsonFilePath = 'config/settings_data.json',
+    //     sectionKey,
+    //     field,
+    //     newValue,
+    // }: {
+    //     themeFilePath: string;
+    //     jsonFilePath?: string;
+    //     sectionKey: string;
+    //     field: string;
+    //     newValue: any;
+    // }): Promise<{ updatedZipPath: string } | void> {
+    //     console.log(`🚀 ~ ThemesService ~ updateThemeLocally ~ {
+    //     themeFilePath, // can be .zip or folder
+    //     jsonFilePath = 'config/settings_data.json',
+    //     sectionKey,
+    //     field,
+    //     newValue,
+    // }:`, {
+    //     themeFilePath, // can be .zip or folder
+    //     jsonFilePath,
+    //     sectionKey,
+    //     field,
+    //     newValue,
+    // })
+    //     const themeName = path.basename(themeFilePath, path.extname(themeFilePath));
+    //     console.log("🚀 ~ ThemesService ~ updateThemeLocally ~ themeName:", themeName)
+    //     const tempDir = path.join(this.basePath, `${themeName}_${Date.now()}`);
+    //     console.log("🚀 ~ ThemesService ~ updateThemeLocally ~ tempDir:", tempDir)
+    //     const extractPath = path.join(tempDir, 'unzipped');
+    //     const updatedZipPath = path.join(this.updatedPath, `${themeName}_updated.zip`);
+
+    //     ensureDir(tempDir);
+
+    //     try {
+    //         // 1️⃣ Unzip or copy folder
+    //         if (themeFilePath.endsWith('.zip')) {
+    //             await unzipFile(`${this.themePath}${themeFilePath}`, extractPath);
+    //         } else if (fs.statSync(themeFilePath).isDirectory()) {
+    //             fs.cpSync(themeFilePath, extractPath, { recursive: true });
+    //         } else {
+    //             throw new Error('Theme file must be a .zip or a directory');
+    //         }
+
+    //         // 2️⃣ Read JSON
+    //         const jsonFullPath = path.join(extractPath, jsonFilePath);
+    //         if (!fs.existsSync(jsonFullPath)) {
+    //             throw new Error(`JSON file not found: ${jsonFilePath}`);
+    //         }
+
+    //         const jsonData = readJson(jsonFullPath);
+
+    //         // 3️⃣ Find section dynamically
+    //         const sections = jsonData.current?.sections ?? jsonData.sections;
+    //         let _sectionKey = sections[sectionKey];
+    //         if (!_sectionKey) {
+    //             _sectionKey = Object.entries(sections).find(([k]) =>
+    //                 k.toLowerCase().includes(sectionKey.toLowerCase())
+    //             )?.[1];
+    //         }
+    //         if (!_sectionKey) {
+    //             throw new Error(
+    //                 `Section "${sectionKey}" not found. Available: ${Object.keys(sections).join(', ')}`
+    //             );
+    //         }
+
+    //         // 4️⃣ Update the field
+    //         _sectionKey.settings[field] = newValue; //! Need more debugging
+
+    //         // 5️⃣ Save updated JSON
+    //         writeJson(jsonFullPath, jsonData);
+
+    //         // // 6️⃣ Zip folder again
+    //         // await zipFolder(extractPath, updatedZipPath);
+
+    //         // // 7️⃣ Cleanup temp folder
+    //         // deleteFolderRecursive(tempDir);
+
+    //         console.log(`✅ Theme updated and saved at: ${updatedZipPath}`);
+
+    //         return { updatedZipPath };
+    //     } catch (err: any) {
+    //         console.error('❌ Theme update error:', err);
+    //         throw new InternalServerErrorException('Failed to update theme JSON locally');
+    //     }
+    // }
+
+
+
+    /**
+    * Step 1️⃣: Extract the theme & update JSON fields (keeps the extracted folder)
+    */
     async updateThemeLocally({
         themeFilePath, // can be .zip or folder
         jsonFilePath = 'config/settings_data.json',
@@ -244,26 +338,18 @@ export class ThemesService {
         sectionKey: string;
         field: string;
         newValue: any;
-    }): Promise<{ updatedZipPath: string } | void> {
-        console.log(`🚀 ~ ThemesService ~ updateThemeLocally ~ {
-        themeFilePath, // can be .zip or folder
-        jsonFilePath = 'config/settings_data.json',
-        sectionKey,
-        field,
-        newValue,
-    }:`, {
-        themeFilePath, // can be .zip or folder
-        jsonFilePath,
-        sectionKey,
-        field,
-        newValue,
-    })
+    }): Promise<{ extractPath: string; themeName: string }> {
+        console.log(`🚀 ~ ThemesService ~ updateThemeLocally called`, {
+            themeFilePath,
+            jsonFilePath,
+            sectionKey,
+            field,
+            newValue,
+        });
+
         const themeName = path.basename(themeFilePath, path.extname(themeFilePath));
-        console.log("🚀 ~ ThemesService ~ updateThemeLocally ~ themeName:", themeName)
-        const tempDir = path.join(this.basePath, `${themeName}_${Date.now()}`);
-        console.log("🚀 ~ ThemesService ~ updateThemeLocally ~ tempDir:", tempDir)
+        const tempDir = path.join(this.basePath, `${themeName}_workdir`);
         const extractPath = path.join(tempDir, 'unzipped');
-        const updatedZipPath = path.join(this.updatedPath, `${themeName}_updated.zip`);
 
         ensureDir(tempDir);
 
@@ -274,7 +360,7 @@ export class ThemesService {
             } else if (fs.statSync(themeFilePath).isDirectory()) {
                 fs.cpSync(themeFilePath, extractPath, { recursive: true });
             } else {
-                throw new Error('Theme file must be a .zip or a directory');
+                throw new Error('Theme file must be a .zip or directory');
             }
 
             // 2️⃣ Read JSON
@@ -285,41 +371,64 @@ export class ThemesService {
 
             const jsonData = readJson(jsonFullPath);
 
-            // 3️⃣ Find section dynamically
+            // 3️⃣ Find section
             const sections = jsonData.current?.sections ?? jsonData.sections;
-            let _sectionKey = sections[sectionKey];
-            if (!_sectionKey) {
-                _sectionKey = Object.entries(sections).find(([k]) =>
+            let targetSection = sections[sectionKey];
+            if (!targetSection) {
+                targetSection = Object.entries(sections).find(([k]) =>
                     k.toLowerCase().includes(sectionKey.toLowerCase())
                 )?.[1];
             }
-            if (!_sectionKey) {
-                throw new Error(
-                    `Section "${sectionKey}" not found. Available: ${Object.keys(sections).join(', ')}`
-                );
+            if (!targetSection) {
+                throw new Error(`Section "${sectionKey}" not found`);
             }
 
-            // 4️⃣ Update the field
-            _sectionKey.settings[field] = newValue; //! Need more debugging
+            // 2️⃣ Update field dynamically using dot path
+            setNestedValue(targetSection, field, newValue);
 
-            // 5️⃣ Save updated JSON
+            // 5️⃣ Save JSON
             writeJson(jsonFullPath, jsonData);
 
-            // // 6️⃣ Zip folder again
-            // await zipFolder(extractPath, updatedZipPath);
-
-            // // 7️⃣ Cleanup temp folder
-            // deleteFolderRecursive(tempDir);
-
-            console.log(`✅ Theme updated and saved at: ${updatedZipPath}`);
-
-            return { updatedZipPath };
+            console.log(`✅ JSON updated successfully at ${jsonFullPath}`);
+            return { extractPath, themeName };
         } catch (err: any) {
             console.error('❌ Theme update error:', err);
             throw new InternalServerErrorException('Failed to update theme JSON locally');
         }
     }
 
-    
+    /**
+     * Step 2️⃣: Zip the updated folder and upload to S3 (or local)
+     */
+    async finalizeThemeAndUpload({
+        extractPath,
+        themeName,
+    }: {
+        extractPath: string;
+        themeName: string;
+    }): Promise<{ updatedZipPath: string; s3Url?: string } | void> {
+        try {
+            const updatedZipPath = path.join(this.updatedPath, `${themeName}_updated.zip`);
+            ensureDir(this.updatedPath);
+
+            // Zip updated folder
+            await zipFolder(extractPath, updatedZipPath);
+
+            // console.log(`📦 Zipped theme saved at ${updatedZipPath}`);
+
+            // // Upload to S3
+            // const s3Url = await uploadToS3(updatedZipPath, `themes/${themeName}_updated.zip`);
+
+            // console.log(`☁️ Uploaded to S3: ${s3Url}`);
+
+            // Optional: cleanup extracted files
+            // deleteFolderRecursive(path.dirname(extractPath));
+
+            // return { updatedZipPath, s3Url };
+        } catch (err: any) {
+            console.error('❌ finalizeThemeAndUpload error:', err);
+            throw new InternalServerErrorException('Failed to finalize and upload theme');
+        }
+    }
 
 }
