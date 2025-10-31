@@ -16,13 +16,17 @@ import { ShopService } from '../shop/shop.service';
 
 @Injectable()
 export class ThemesService {
+    private themePath = path.join(process.cwd(), 'src', 'shopify', 'themes',);
+    private basePath = path.join(process.cwd(), 'src', 'shopify', 'themes', 'themes_temp');
+    private updatedPath = path.join(process.cwd(), 'src', 'shopify', 'themes', 'updated_themes');
+
     constructor(
         private readonly httpService: HttpService,
         private readonly shopService: ShopService,
-    ) { }
-
-
-    private readonly basePath = path.join(process.cwd(), 'uploads', 'themes');
+    ) {
+        ensureDir(this.basePath);
+        ensureDir(this.updatedPath);
+    }
 
     async getShopifyStoreUrl({ shopId, accessToken }: { shopId: string; accessToken: string }) {
         return this.shopService.getShopifyStoreUrl({ shopId, accessToken });
@@ -130,139 +134,191 @@ export class ThemesService {
         return data.themes;
     }
 
-    async updateThemeJson(dto: any): Promise<{ zipPath: string }> {
-        const { themeUrl, jsonFilePath = 'config/settings_data.json', updateData } = dto;
+    // async updateThemeSettings({
+    //     shopId,
+    //     accessToken,
+    //     themeId,
+    //     sectionKey,
+    //     field,
+    //     newValue,
+    // }: {
+    //     shopId: string;
+    //     accessToken: string;
+    //     themeId: string;
+    //     sectionKey: string;
+    //     field: string;
+    //     newValue: any;
+    // }) {
+    //     const settingsFile = 'config/settings_data.json';
+
+    //     const { shopUrl } = await this.getShopifyStoreUrl({ shopId, accessToken });
+    //     const _url = `${shopUrl}/themes/${themeId}/assets.json`
+
+    //     try {
+    //         // 1️⃣ Fetch current settings_data.json
+    //         const { data } = await this.httpService.axiosRef.get(
+    //             _url,
+    //             {
+    //                 headers: { 'X-Shopify-Access-Token': accessToken },
+    //                 params: { 'asset[key]': settingsFile },
+    //             },
+    //         );
+
+    //         if (!data?.asset?.value) {
+    //             throw new Error(`File ${settingsFile} not found in theme ${themeId}`);
+    //         }
+
+    //         const json = JSON.parse(data.asset.value);
+
+    //         // 2️⃣ Find section key dynamically if exact match not found
+    //         const sections = json.current?.sections ?? json.sections;
+    //         let _sectionKey = sections[sectionKey];
+    //         console.log("🚀 ~ ThemesService ~ updateThemeSettings ~ _sectionKey:", _sectionKey)
+
+    //         if (!_sectionKey) {
+    //             // Fuzzy search for section containing the name
+    //             _sectionKey =
+    //                 Object.entries(sections).find(([k]) =>
+    //                     k.toLowerCase().includes(sectionKey.toLowerCase()),
+    //                 )?.[1] ?? null;
+
+    //             if (!_sectionKey) {
+    //                 throw new Error(
+    //                     `Section "${sectionKey}" not found in ${settingsFile}. Available keys: ${Object.keys(
+    //                         sections,
+    //                     ).join(', ')}`,
+    //                 );
+    //             }
+    //         }
+
+    //         // 3️⃣ Update the field
+    //         _sectionKey.settings[field] = newValue;
+
+    //         console.log('🚀 Updated section:', _sectionKey);
+
+    //         // 4️⃣ Upload updated JSON back to Shopify
+    //         const updateRes = await this.httpService.axiosRef.put(
+    //             _url,
+    //             {
+    //                 asset: {
+    //                     key: settingsFile,
+    //                     value: JSON.stringify(json),
+    //                 },
+    //                 // value: JSON.stringify(json, null, 2),
+    //             },
+    //             {
+    //                 headers: {
+    //                     'X-Shopify-Access-Token': accessToken,
+    //                     'Content-Type': 'application/json',
+    //                 }
+    //             },
+    //         );
+
+    //         return {
+    //             success: true,
+    //             message: `Updated "${field}" in section "${sectionKey}" successfully.`,
+    //             response: updateRes.data,
+    //         };
+    //     } catch (error: any) {
+    //         console.error('❌ Shopify theme update error:', error.response?.data || error.message);
+    //         throw new InternalServerErrorException(
+    //             error.response?.data?.errors || 'Failed to update config/settings_data.json',
+    //         );
+    //     }
+    // }
+
+
+    //* FILES SYSTEM
+    /**
+       * Update a local theme zip/folder and save updated zip locally
+       */
+    async updateThemeLocally({
+        themeFilePath, // can be .zip or folder
+        jsonFilePath = 'config/settings_data.json',
+        sectionKey,
+        field,
+        newValue,
+    }: {
+        themeFilePath: string;
+        jsonFilePath?: string;
+        sectionKey: string;
+        field: string;
+        newValue: any;
+    }): Promise<{ updatedZipPath: string } | void> {
+        console.log(`🚀 ~ ThemesService ~ updateThemeLocally ~ {
+        themeFilePath, // can be .zip or folder
+        jsonFilePath = 'config/settings_data.json',
+        sectionKey,
+        field,
+        newValue,
+    }:`, {
+        themeFilePath, // can be .zip or folder
+        jsonFilePath,
+        sectionKey,
+        field,
+        newValue,
+    })
+        const themeName = path.basename(themeFilePath, path.extname(themeFilePath));
+        console.log("🚀 ~ ThemesService ~ updateThemeLocally ~ themeName:", themeName)
+        const tempDir = path.join(this.basePath, `${themeName}_${Date.now()}`);
+        console.log("🚀 ~ ThemesService ~ updateThemeLocally ~ tempDir:", tempDir)
+        const extractPath = path.join(tempDir, 'unzipped');
+        const updatedZipPath = path.join(this.updatedPath, `${themeName}_updated.zip`);
+
+        ensureDir(tempDir);
 
         try {
-            const themeId = Date.now().toString();
-            const tempDir = path.join(this.basePath, themeId);
-            const zipPath = path.join(tempDir, 'theme.zip');
-            const extractPath = path.join(tempDir, 'unzipped');
-            const updatedZipPath = path.join(tempDir, 'updated_theme.zip');
+            // 1️⃣ Unzip or copy folder
+            if (themeFilePath.endsWith('.zip')) {
+                await unzipFile(`${this.themePath}${themeFilePath}`, extractPath);
+            } else if (fs.statSync(themeFilePath).isDirectory()) {
+                fs.cpSync(themeFilePath, extractPath, { recursive: true });
+            } else {
+                throw new Error('Theme file must be a .zip or a directory');
+            }
 
-            ensureDir(tempDir);
-
-            // 1️⃣ Download theme zip
-            await downloadFile(themeUrl, zipPath);
-
-            // 2️⃣ Extract zip
-            await unzipFile(zipPath, extractPath);
-
-            // 3️⃣ Read JSON
+            // 2️⃣ Read JSON
             const jsonFullPath = path.join(extractPath, jsonFilePath);
             if (!fs.existsSync(jsonFullPath)) {
                 throw new Error(`JSON file not found: ${jsonFilePath}`);
             }
+
             const jsonData = readJson(jsonFullPath);
 
-            // 4️⃣ Merge new data
-            const updatedJson = { ...jsonData, ...updateData };
-
-            // 5️⃣ Write back updated JSON
-            writeJson(jsonFullPath, updatedJson);
-
-            // 6️⃣ Repackage as zip
-            await zipFolder(extractPath, updatedZipPath);
-
-            // (Optional) cleanup extract dir
-            deleteFolderRecursive(extractPath);
-
-            // 7️⃣ Return updated zip path
-            return { zipPath: updatedZipPath };
-        } catch (err) {
-            console.error(err);
-            throw new InternalServerErrorException('Failed to update theme JSON');
-        }
-    }
-
-    async updateThemeSettings({
-    shopId,
-    accessToken,
-    themeId,
-    sectionKey,
-    field,
-    newValue,
-}: {
-    shopId: string;
-    accessToken: string;
-    themeId: string;
-    sectionKey: string;
-    field: string;
-    newValue: any;
-}) {
-    const settingsFile = 'config/settings_data.json';
-
-    const { shopDomain } = await this.getShopifyStoreUrl({ shopId, accessToken });
-
-    try {
-        // 1️⃣ Fetch current settings_data.json
-        const { data } = await this.httpService.axiosRef.get(
-            `https://${shopDomain}/admin/api/2024-10/themes/${themeId}/assets.json`,
-            {
-                headers: { 'X-Shopify-Access-Token': accessToken },
-                params: { 'asset[key]': settingsFile },
-            },
-        );
-
-        if (!data?.asset?.value) {
-            throw new Error(`File ${settingsFile} not found in theme ${themeId}`);
-        }
-
-        const json = JSON.parse(data.asset.value);
-
-        // 2️⃣ Find section key dynamically if exact match not found
-        const sections = json.current?.sections ?? json.sections;
-        let _sectionKey = sections[sectionKey];
-
-        if (!_sectionKey) {
-            // Fuzzy search for section containing the name
-            _sectionKey =
-                Object.entries(sections).find(([k]) =>
-                    k.toLowerCase().includes(sectionKey.toLowerCase()),
-                )?.[1] ?? null;
-
+            // 3️⃣ Find section dynamically
+            const sections = jsonData.current?.sections ?? jsonData.sections;
+            let _sectionKey = sections[sectionKey];
+            if (!_sectionKey) {
+                _sectionKey = Object.entries(sections).find(([k]) =>
+                    k.toLowerCase().includes(sectionKey.toLowerCase())
+                )?.[1];
+            }
             if (!_sectionKey) {
                 throw new Error(
-                    `Section "${sectionKey}" not found in ${settingsFile}. Available keys: ${Object.keys(
-                        sections,
-                    ).join(', ')}`,
+                    `Section "${sectionKey}" not found. Available: ${Object.keys(sections).join(', ')}`
                 );
             }
+
+            // 4️⃣ Update the field
+            _sectionKey.settings[field] = newValue;
+
+            // 5️⃣ Save updated JSON
+            writeJson(jsonFullPath, jsonData);
+
+            // 6️⃣ Zip folder again
+            await zipFolder(extractPath, updatedZipPath);
+
+            // 7️⃣ Cleanup temp folder
+            deleteFolderRecursive(tempDir);
+
+            console.log(`✅ Theme updated and saved at: ${updatedZipPath}`);
+
+            return { updatedZipPath };
+        } catch (err: any) {
+            console.error('❌ Theme update error:', err);
+            throw new InternalServerErrorException('Failed to update theme JSON locally');
         }
-
-        // 3️⃣ Update the field
-        _sectionKey.settings[field] = newValue;
-
-        console.log('🚀 Updated section:', _sectionKey);
-
-        // 4️⃣ Upload updated JSON back to Shopify
-        const updateRes = await this.httpService.axiosRef.put(
-            `https://${shopDomain}/admin/api/2024-10/themes/${themeId}/assets.json`,
-            {
-                asset: {
-                    key: settingsFile,
-                    value: JSON.stringify(json, null, 2),
-                },
-            },
-            {
-                headers: {
-                    'X-Shopify-Access-Token': accessToken,
-                    'Content-Type': 'application/json',
-                },
-            },
-        );
-
-        return {
-            success: true,
-            message: `Updated "${field}" in section "${sectionKey}" successfully.`,
-            response: updateRes.data,
-        };
-    } catch (error: any) {
-        console.error('❌ Shopify theme update error:', error.response?.data || error.message);
-        throw new InternalServerErrorException(
-            error.response?.data?.errors || 'Failed to update config/settings_data.json',
-        );
     }
-}
+
 
 }

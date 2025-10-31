@@ -1,27 +1,36 @@
-import * as AdmZip from 'adm-zip';
 import * as fs from 'fs';
 import * as path from 'path';
+import extract from 'extract-zip';
+import archiver from 'archiver';
 
+/**
+ * ✅ Unzip a ZIP file to a given directory
+ */
 export const unzipFile = async (zipPath: string, extractTo: string): Promise<void> => {
-  const zip = new AdmZip(zipPath);
-  zip.extractAllTo(extractTo, true);
+  try {
+    await extract(zipPath, { dir: path.resolve(extractTo) });
+    console.log(`✅ Extracted ${zipPath} to ${extractTo}`);
+  } catch (error) {
+    console.error('❌ unzipFile error:', error);
+    throw error;
+  }
 };
 
+/**
+ * ✅ Zip a folder (recursively) into a ZIP file
+ */
 export const zipFolder = async (folderPath: string, outputZipPath: string): Promise<void> => {
-  const zip = new AdmZip();
-  const addFolder = (dir: string, baseDir: string = '') => {
-    const files = fs.readdirSync(dir);
-    files.forEach(file => {
-      const fullPath = path.join(dir, file);
-      const relPath = path.join(baseDir, file);
-      const stat = fs.statSync(fullPath);
-      if (stat.isDirectory()) {
-        addFolder(fullPath, relPath);
-      } else {
-        zip.addFile(relPath, fs.readFileSync(fullPath));
-      }
-    });
-  };
-  addFolder(folderPath);
-  zip.writeZip(outputZipPath);
+  try {
+    const output = fs.createWriteStream(outputZipPath);
+    const archive = archiver('zip', { zlib: { level: 9 } });
+
+    archive.pipe(output);
+    archive.directory(folderPath, false);
+    await archive.finalize();
+
+    console.log(`✅ Created ZIP at ${outputZipPath}`);
+  } catch (error) {
+    console.error('❌ zipFolder error:', error);
+    throw error;
+  }
 };
