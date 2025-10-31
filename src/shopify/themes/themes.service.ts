@@ -300,16 +300,16 @@ export class ThemesService {
             }
 
             // 4️⃣ Update the field
-            _sectionKey.settings[field] = newValue;
+            _sectionKey.settings[field] = newValue; //! Need more debugging
 
             // 5️⃣ Save updated JSON
             writeJson(jsonFullPath, jsonData);
 
-            // 6️⃣ Zip folder again
-            await zipFolder(extractPath, updatedZipPath);
+            // // 6️⃣ Zip folder again
+            // await zipFolder(extractPath, updatedZipPath);
 
-            // 7️⃣ Cleanup temp folder
-            deleteFolderRecursive(tempDir);
+            // // 7️⃣ Cleanup temp folder
+            // deleteFolderRecursive(tempDir);
 
             console.log(`✅ Theme updated and saved at: ${updatedZipPath}`);
 
@@ -320,5 +320,6 @@ export class ThemesService {
         }
     }
 
+    
 
 }
