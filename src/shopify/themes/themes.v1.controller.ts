@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ThemesService } from './themes.service';
 import { ShopifyStore } from 'src/decorators/shopify-store.decorator';
 import { ShopifyAccessGuard } from 'src/guards/shopify-access.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @UseGuards(ShopifyAccessGuard)
 @Controller('v1/shop/themes')
@@ -55,6 +56,22 @@ export class ThemesV1Controller {
             shopId: shopId,
             accessToken,
             ...payload,
+        });
+    }
+
+    @Post('upload/file')
+    @UseInterceptors(FileInterceptor('file'))
+    async uploadFile(
+        @ShopifyStore() shopifyStore: any,
+        @UploadedFile() file: Express.Multer.File,
+    ) {
+        const accessToken = shopifyStore.accessToken;
+        const shopId = shopifyStore.shopId;
+
+        return this.themesService.uploadToShopifyFiles({
+            shopId,
+            accessToken,
+            file,
         });
     }
 

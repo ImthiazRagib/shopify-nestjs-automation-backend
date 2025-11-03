@@ -431,4 +431,45 @@ export class ThemesService {
         }
     }
 
+    async uploadToShopifyFiles({ shopId, accessToken, file }: { shopId: string, accessToken: string, file: Express.Multer.File }) {
+        try {
+            const fileContent = file.buffer.toString('base64');
+            const fileName = file.originalname;
+            const { shopUrl } = await this.getShopifyStoreUrl({ shopId, accessToken });
+            const _url = `${shopUrl}/files.json`
+            console.log("🚀 ~ ThemesService ~ uploadToShopifyFiles ~ files:", {
+                attachment: fileContent,
+                filename: fileName,
+            },)
+
+
+            const response = await this.httpService.axiosRef.post(
+                _url,
+                {
+                    file: {
+                        attachment: fileContent,
+                        filename: fileName,
+                    },
+                },
+                {
+                    headers: {
+                        "X-Shopify-Access-Token": accessToken,
+                        "Content-Type": "application/json",
+                        "Accept": "application/json",
+                    },
+                }
+            );
+            console.log("🚀 ~ ThemesService ~ uploadToShopifyFiles ~ response:", response)
+
+            return response.data.file.public_url;
+        } catch (error) {
+            console.error('❌ uploadToShopifyFiles error:', error);
+            throw new HttpException(
+                error.message || 'Failed to upload file to Shopify',
+                error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+
+
 }
