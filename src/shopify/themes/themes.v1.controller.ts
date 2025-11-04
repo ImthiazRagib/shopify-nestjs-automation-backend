@@ -75,6 +75,16 @@ export class ThemesV1Controller {
         });
     }
 
+    @Get('files')
+    async getShopifyFiles(
+        @ShopifyStore() shopifyStore: any,
+    ) {
+        const accessToken = shopifyStore.accessToken;
+        const shopId = shopifyStore.shopId;
+
+        return this.themesService.getShopifyFiles(shopId, accessToken);
+    }
+
     @Get()
     listOfThemes(@ShopifyStore() shopifyStore: any) {
         const accessToken = shopifyStore.accessToken;

@@ -431,6 +431,29 @@ export class ThemesService {
         }
     }
 
+    async getShopifyFiles(shopId: string, accessToken: string) {
+        try {
+            const { shopUrl } = await this.getShopifyStoreUrl({ shopId, accessToken });
+            const url = `${shopUrl}/files.json`
+            console.log("🚀 ~ ThemesService ~ getShopifyFiles ~ url:", url)
+            const response = await this.httpService.axiosRef.get(
+                url,
+                {
+                    headers: {
+                        'X-Shopify-Access-Token': accessToken,
+                        'Accept': 'application/json',
+                    },
+                }
+            );
+
+            // The list of files
+            return response.data.files;
+        } catch (error) {
+            console.error('Error fetching Shopify files:', error.response);
+            throw error;
+        }
+    }
+
     async uploadToShopifyFiles({ shopId, accessToken, file }: { shopId: string, accessToken: string, file: Express.Multer.File }) {
         try {
             const fileContent = file.buffer.toString('base64');
@@ -440,7 +463,14 @@ export class ThemesService {
             console.log("🚀 ~ ThemesService ~ uploadToShopifyFiles ~ files:", {
                 attachment: fileContent,
                 filename: fileName,
-            },)
+                mime_type: file.mimetype,
+                content_type: file.mimetype,
+            },_url)
+
+            // return {
+            //     attachment: fileContent,
+            //     filename: fileName,
+            // }
 
 
             const response = await this.httpService.axiosRef.post(
@@ -449,6 +479,8 @@ export class ThemesService {
                     file: {
                         attachment: fileContent,
                         filename: fileName,
+                        mime_type: file.mimetype,
+                        content_type: file.mimetype,
                     },
                 },
                 {
@@ -470,6 +502,126 @@ export class ThemesService {
             );
         }
     }
+
+    //     async graphql(query, variables, shopId: string, accessToken: string) {
+    //         const { shopUrl } = await this.getShopifyStoreUrl({ shopId, accessToken });
+    //         const res = await fetch(`${shopUrl}/graphql.json`, {
+    //             method: 'POST',
+    //             headers: {
+    //                 'X-Shopify-Access-Token': accessToken,
+    //                 'Content-Type': 'application/json; charset=utf-8',
+    //                 'Accept': 'application/json',
+    //             },
+    //             body: JSON.stringify({ query, variables }),
+    //         });
+    //         const j = await res.json();
+    //         if (j.errors) throw new Error(JSON.stringify(j.errors));
+    //         return j.data;
+    //     }
+
+    //     async uploadFileAndMetafield(accessToken: string, shopId: string, file: Express.Multer.File) {
+    //         const fileContent = file.buffer.toString('base64');
+    //         const fileName = file.originalname;
+    //         console.log("🚀 ~ ThemesService ~ uploadToShopifyFiles ~ files:", {
+    //             attachment: fileContent,
+    //             filename: fileName,
+    //         },)
+    //         const byteSize = fileContent.length;
+
+    //         // 1) stagedUploadsCreate
+    //         const stagedQuery = `
+    //     mutation stagedUploadsCreate($input: [StagedUploadInput!]!) {
+    //       stagedUploadsCreate(input: $input) {
+    //         stagedTargets {
+    //           url
+    //           resourceUrl
+    //           uploadParameters {
+    //             name
+    //             value
+    //           }
+    //         }
+    //         userErrors { field message }
+    //       }
+    //     }
+    //   `;
+    //         const stagedVars = {
+    //             input: [{
+    //                 filename: fileName,
+    //                 mimeType: file.mimetype,
+    //                 httpMethod: "POST",   // or "PUT" depending on the return (check stagedTargets)
+    //                 resource: "FILE"
+    //             }]
+    //         };
+
+    //         const stagedData = await this.graphql(stagedQuery, stagedVars, shopId, accessToken);
+    //         const target = stagedData.stagedUploadsCreate.stagedTargets[0];
+    //         if (!target) throw new Error('No staged target returned');
+
+    //         // 2) Upload to the signed URL
+    //         // Some targets expect a plain PUT with raw bytes, some expect POST multipart. Check uploadParameters.
+    //         // If uploadParameters exists -> do multipart/form-data POST.
+    //         if (target.uploadParameters && target.uploadParameters.length) {
+    //             // Build a multipart/form-data body using fetch FormData
+    //             const FormData = (await import('form-data')).default;
+    //             const form = new FormData();
+    //             target.uploadParameters.forEach(p => form.append(p.name, p.value));
+    //             form.append('file', Buffer.from(fileContent), { filename: fileName, contentType: file.mimetype });
+    //             await fetch(target.url, { method: 'POST', body: form });
+    //         } else {
+    //             // plain PUT
+    //             await fetch(target.url, {
+    //                 method: 'PUT',
+    //                 headers: { 'Content-Type': file.mimetype, 'Content-Length': byteSize },
+    //                 body: Buffer.from(fileContent)
+    //             });
+    //         }
+
+    //         // 3) fileCreate using resource: resourceUrl from staged target
+    //         const fileCreateQuery = `
+    //     mutation fileCreate($input: [FileCreateInput!]!) {
+    //       fileCreate(input: $input) {
+    //         files { id url filename contentType }
+    //         userErrors { field message }
+    //       }
+    //     }
+    //   `;
+    //         const fileCreateVars = {
+    //             input: [{
+    //                 resource: target.resourceUrl, // resourceUrl (staged upload)
+    //                 filename: fileName,
+    //             }]
+    //         };
+    //         const fileCreateRes = await this.graphql(fileCreateQuery, fileCreateVars, shopId, accessToken);
+    //         const file = fileCreateRes.fileCreate.files[0];
+    //         if (!file) throw new Error('fileCreate failed: ' + JSON.stringify(fileCreateRes));
+
+    //         // 4) create metafield attached to the file (ownerId = file.id)
+    //         // file.id will be a GID (gid://shopify/File/12345)
+    //         const metafieldQuery = `
+    //     mutation metafieldCreate($input: MetafieldInput!) {
+    //       metafieldCreate(input: $input) {
+    //         metafield { id namespace key value type ownerType ownerId }
+    //         userErrors { field message }
+    //       }
+    //     }
+    //   `;
+    //         const metafieldVars = {
+    //             input: {
+    //                 namespace: "custom",
+    //                 key: "content_type",
+    //                 value: file.mimetype,
+    //                 type: "single_line_text_field",
+    //                 ownerId: file.id
+    //             }
+    //         };
+    //         const mfRes = await this.graphql(metafieldQuery, metafieldVars, shopId, accessToken);
+    //         if (mfRes.metafieldCreate.userErrors?.length) {
+    //             throw new Error('metafieldCreate failed: ' + JSON.stringify(mfRes.metafieldCreate.userErrors));
+    //         }
+
+    //         return { file, metafield: mfRes.metafieldCreate.metafield };
+    //     }
+
 
 
 }
