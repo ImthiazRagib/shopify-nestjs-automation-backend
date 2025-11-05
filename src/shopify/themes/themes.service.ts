@@ -14,6 +14,7 @@ import * as fs from 'fs';
 import { ShopifyThemeRole } from '../enum';
 import { HttpService } from '@nestjs/axios';
 import { ShopService } from '../shop/shop.service';
+import { AwsS3Service } from 'src/s3-bucket/s3-bucket.service';
 
 @Injectable()
 export class ThemesService {
@@ -24,6 +25,7 @@ export class ThemesService {
     constructor(
         private readonly httpService: HttpService,
         private readonly shopService: ShopService,
+        private readonly awsS3Service: AwsS3Service,
     ) {
         ensureDir(this.basePath);
         ensureDir(this.updatedPath);
@@ -174,7 +176,6 @@ export class ThemesService {
     //         // 2️⃣ Find section key dynamically if exact match not found
     //         const sections = json.current?.sections ?? json.sections;
     //         let _sectionKey = sections[sectionKey];
-    //         console.log("🚀 ~ ThemesService ~ updateThemeSettings ~ _sectionKey:", _sectionKey)
 
     //         if (!_sectionKey) {
     //             // Fuzzy search for section containing the name
@@ -246,23 +247,8 @@ export class ThemesService {
     //     field: string;
     //     newValue: any;
     // }): Promise<{ updatedZipPath: string } | void> {
-    //     console.log(`🚀 ~ ThemesService ~ updateThemeLocally ~ {
-    //     themeFilePath, // can be .zip or folder
-    //     jsonFilePath = 'config/settings_data.json',
-    //     sectionKey,
-    //     field,
-    //     newValue,
-    // }:`, {
-    //     themeFilePath, // can be .zip or folder
-    //     jsonFilePath,
-    //     sectionKey,
-    //     field,
-    //     newValue,
-    // })
     //     const themeName = path.basename(themeFilePath, path.extname(themeFilePath));
-    //     console.log("🚀 ~ ThemesService ~ updateThemeLocally ~ themeName:", themeName)
     //     const tempDir = path.join(this.basePath, `${themeName}_${Date.now()}`);
-    //     console.log("🚀 ~ ThemesService ~ updateThemeLocally ~ tempDir:", tempDir)
     //     const extractPath = path.join(tempDir, 'unzipped');
     //     const updatedZipPath = path.join(this.updatedPath, `${themeName}_updated.zip`);
 
@@ -339,13 +325,6 @@ export class ThemesService {
         field: string;
         newValue: any;
     }): Promise<{ extractPath: string; themeName: string }> {
-        console.log(`🚀 ~ ThemesService ~ updateThemeLocally called`, {
-            themeFilePath,
-            jsonFilePath,
-            sectionKey,
-            field,
-            newValue,
-        });
 
         const themeName = path.basename(themeFilePath, path.extname(themeFilePath));
         const tempDir = path.join(this.basePath, `${themeName}_workdir`);
@@ -435,7 +414,6 @@ export class ThemesService {
         try {
             const { shopUrl } = await this.getShopifyStoreUrl({ shopId, accessToken });
             const url = `${shopUrl}/files.json`
-            console.log("🚀 ~ ThemesService ~ getShopifyFiles ~ url:", url)
             const response = await this.httpService.axiosRef.get(
                 url,
                 {
@@ -463,17 +441,15 @@ export class ThemesService {
         accessToken: string;
         file: Express.Multer.File;
     }) {
-        const { shopDomain } = await this.getShopifyStoreUrl({ shopId, accessToken });
+        try {
+            const { shopUrl } = await this.getShopifyStoreUrl({ shopId, accessToken });
 
-        // ✅ Correct Shopify GraphQL endpoint
-        const endpoint = `${shopDomain}/admin/api/2025-01/graphql.json`;
+            // ✅ Correct Shopify GraphQL endpoint
+            const endpoint = `${shopUrl}/graphql.json`;
+            const s3FileUrl = await this.awsS3Service.uploadFile(file);
 
-        // ✅ Publicly accessible image URL (replace with your S3 or CDN URL)
-        const uploadedUrl =
-            'https://media.istockphoto.com/id/1475308821/vector/3d-realistic-colour-store-with-shadow-isolated-on-yellow-background-vector-illustration.jpg?s=2048x2048&w=is&k=20&c=gOe6CVEZXH3FjJ9qY7DkV7UqwSI6ObMFwXT6Db3FbH8=';
-
-        // ✅ Updated GraphQL query (correct fragments for File type)
-        const query = `
+            // ✅ Updated GraphQL query (correct fragments for File type)
+            const query = `
     mutation fileCreate($files: [FileCreateInput!]!) {
       fileCreate(files: $files) {
         files {
@@ -498,17 +474,16 @@ export class ThemesService {
     }
   `;
 
-        const variables = {
-            files: [
-                {
-                    originalSource: uploadedUrl,
-                    contentType: 'IMAGE',
-                    alt: file.originalname || 'Uploaded via NestJS',
-                },
-            ],
-        };
+            const variables = {
+                files: [
+                    {
+                        originalSource: s3FileUrl,
+                        contentType: 'IMAGE',
+                        alt: file.originalname || 'Uploaded via NestJS',
+                    },
+                ],
+            };
 
-        try {
             const response = await this.httpService.axiosRef.post(
                 endpoint,
                 { query, variables },
@@ -535,6 +510,9 @@ export class ThemesService {
             const fileData = data.files[0];
             const fileUrl = fileData?.image?.url || fileData?.url;
 
+            // Delete the file from S3 after successful upload
+            console.log("🚀 ~ ThemesService ~ uploadToShopifyFiles ~ s3FileUrl:", s3FileUrl)
+            await this.awsS3Service.deleteFile(s3FileUrl);
             return {
                 id: fileData.id,
                 alt: fileData.alt,
@@ -551,6 +529,5 @@ export class ThemesService {
             throw new HttpException(errorMessage, error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
 
 }
