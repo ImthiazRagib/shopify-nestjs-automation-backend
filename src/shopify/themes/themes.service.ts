@@ -508,6 +508,7 @@ export class ThemesService {
             }
 
             const fileData = data.files[0];
+            console.log("🚀 ~ ThemesService ~ uploadToShopifyFiles ~ data:", data)
             const fileUrl = fileData?.image?.url || fileData?.url;
 
             // Delete the file from S3 after successful upload
@@ -529,5 +530,37 @@ export class ThemesService {
             throw new HttpException(errorMessage, error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+        // async uploadThemeAsset(payload: {
+    //     shopId: string;
+    //     accessToken: string;
+    //     themeId: string;
+    //     file: Express.Multer.File;
+    // }) {
+    //     const { shopId, accessToken, themeId, file } = payload;
+    //     const { shopUrl } = await this.getShopifyStoreUrl({ shopId, accessToken });
+
+    //     // ✅ Correct Shopify GraphQL endpoint
+    //     const endpoint = `${shopUrl}//themes/${themeId}/assets.json`;
+    //     const imagePath = '/path/to/local/image.jpg';
+    //     const fileName = file.originalname;
+    //     const fileData = file.stream;
+    //     const response = await this.httpService.axiosRef.put(
+    //         endpoint,
+    //         {
+    //             asset: {
+    //                 key: `assets/shop_images/${fileName}`,
+    //                 attachment: fileData,
+    //             },
+    //         },
+    //         {
+    //             headers: {
+    //                 'X-Shopify-Access-Token': accessToken,
+    //                 'Content-Type': 'application/json',
+    //             },
+    //         },
+    //     );
+    //     console.log(':white_check_mark: Uploaded theme asset:', response.data.asset.public_url);
+    // }
 
 }
