@@ -54,7 +54,7 @@ export class ThemesService {
         const form = new (require('form-data'))();
         form.append('theme[role]', themeRole); // or 'main' if publishing immediately
         form.append('theme[name]', name);
-        form.append('theme[src]', fs.createReadStream(zipUrl));
+        form.append('theme[src]', zipUrl);
 
         const url = `${shopUrl}/themes.json`;
         console.log("📦 Uploading Theme →", url);
@@ -383,27 +383,29 @@ export class ThemesService {
         shopifyStore,
         extractPath,
         themeName,
+        themeRole,
     }: {
         shopifyStore: any;
         extractPath: string;
         themeName: string;
+        themeRole: ShopifyThemeRole;
     }): Promise<string> {
         try {
-            const updatedZipPath = path.join(this.updatedPath, `${themeName}_updated.zip`);
+            const updatedZipPath = path.join(this.updatedPath, `${themeName}.zip`);
             ensureDir(this.updatedPath);
 
             // Zip updated folder
-             await zipFolder(extractPath, updatedZipPath);
+            await zipFolder(extractPath, updatedZipPath);
 
             console.log(`📦 Zipped theme saved at ${updatedZipPath}`);
 
             // Upload to S3
             const s3Url = await this.awsS3Service.uploadFileByPath(updatedZipPath, `themes`);
 
-            console.log(`☁️ Uploaded to S3: ${s3Url}`);
+            console.log(`☁️ Uploaded to S3: ${s3Url.fileUrl}`);
 
             // Optional: cleanup extracted files
-            deleteFolderRecursive(path.dirname(extractPath));
+            // deleteFolderRecursive(path.dirname(extractPath));
 
             await this.uploadTheme(
                 {
@@ -411,7 +413,7 @@ export class ThemesService {
                     accessToken: shopifyStore.accessToken,
                     name: themeName,
                     zipUrl: s3Url.fileUrl,
-                    themeRole: ShopifyThemeRole.UNPUBLISHED,
+                    themeRole: themeRole,
 
                 }
             )
@@ -521,11 +523,9 @@ export class ThemesService {
             }
 
             const fileData = data.files[0];
-            console.log("🚀 ~ ThemesService ~ uploadToShopifyFiles ~ data:", data)
             const fileUrl = fileData?.image?.url || fileData?.url;
 
             // Delete the file from S3 after successful upload
-            console.log("🚀 ~ ThemesService ~ uploadToShopifyFiles ~ s3FileUrl:", s3FileUrl.fileUrl)
             await this.awsS3Service.deleteFile(s3FileUrl.fileUrl);
             return {
                 id: fileData.id,
@@ -560,10 +560,11 @@ export class ThemesService {
         sectionKey: string;
         field: string;
     }) {
+
         const fileData = await this.uploadToShopifyFiles({ shopId, accessToken, file });
 
         // * then update theme locally
-        await this.updateThemeLocally({
+        const updatedJson = await this.updateThemeLocally({
             themeFilePath: themeFilePath, // can be .zip or folder
             jsonFilePath: jsonFilePath || 'config/settings_data.json',
             sectionKey,
@@ -571,7 +572,7 @@ export class ThemesService {
             newValue: fileData.url,
         });
 
-        return fileData;
+        return updatedJson;
     }
 
 }

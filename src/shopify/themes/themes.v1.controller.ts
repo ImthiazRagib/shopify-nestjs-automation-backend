@@ -55,7 +55,7 @@ export class ThemesV1Controller {
             shopId: shopId,
             accessToken,
             file,
-            themeFilePath: body.themeFilePath,
+            themeFilePath: body.filePath,
             jsonFilePath: body.jsonFilePath,
             sectionKey: body.sectionKey,
             field: body.field,
@@ -64,11 +64,10 @@ export class ThemesV1Controller {
 
     @Post('submit-theme')
     uploadFinalTheme(@ShopifyStore() shopifyStore: any, @Body() body: any) {
-        return this.themesService.uploadTheme({
-            shopId: shopifyStore.shopId,
-            accessToken: shopifyStore.accessToken,
-            name: body.themeName,
-            zipUrl: body.zipUrl,
+        return this.themesService.finalizeThemeAndUpload({
+            shopifyStore: shopifyStore,
+            extractPath: body.extractPath,
+            themeName: body.themeName,
             themeRole: body.themeRole,
         })
     }

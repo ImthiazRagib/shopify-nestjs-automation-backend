@@ -79,9 +79,13 @@ export class AwsS3Service {
         }),
       );
 
-      await fs.unlink(filePath);
+      // await fs.unlink(filePath);
 
       const fileUrl = `https://${this.bucket}.s3.${this.region}.amazonaws.com/${directory}/${key}`;
+
+      // * Delete the file from S3 after uploading
+      // await this.deleteFile(fileUrl);
+      console.log(`🚀 ~ AwsS3Service ~ uploadFileByPath ~ { fileUrl, fileName: key }:`, { fileUrl, fileName: key })
       return { fileUrl, fileName: key };
     } catch (error) {
       this.logger.error('❌ S3 upload-by-path failed:', error.message);
