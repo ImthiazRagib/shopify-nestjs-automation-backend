@@ -35,10 +35,8 @@ export class ThemesV1Controller {
     //     });
     // }
 
-    @Post('update/theme')
-    updateHeaderDefaultSection(@ShopifyStore() shopifyStore: any, @Param('themeId') themeId: string, @Body() body: any) {
-        const accessToken = shopifyStore.accessToken;
-        const shopDomain = shopifyStore.myshopifyDomain;
+    @Post('update-theme')
+    updateThemeLocally(@Body() body: any) {
         return this.themesService.updateThemeLocally({
             themeFilePath: body.filePath,
             // jsonFilePath: =``
@@ -48,18 +46,35 @@ export class ThemesV1Controller {
         })
     }
 
-    @Post('upload')
-    uploadTheme(@ShopifyStore() shopifyStore: any, @Body() payload: any) {
+    @Post('update-image')
+    @UseInterceptors(FileInterceptor('file'))
+    uploadAndUpdateimages(@ShopifyStore() shopifyStore: any, @UploadedFile() file: Express.Multer.File, @Body() body: any) {
         const accessToken = shopifyStore.accessToken;
         const shopId = shopifyStore.shopId;
-        return this.themesService.uploadTheme({
+        return this.themesService.uploadAndUpdateimages({
             shopId: shopId,
             accessToken,
-            ...payload,
+            file,
+            themeFilePath: body.themeFilePath,
+            jsonFilePath: body.jsonFilePath,
+            sectionKey: body.sectionKey,
+            field: body.field,
         });
     }
 
-    @Post('upload/file')
+    @Post('submit-theme')
+    uploadFinalTheme(@ShopifyStore() shopifyStore: any, @Body() body: any) {
+        return this.themesService.uploadTheme({
+            shopId: shopifyStore.shopId,
+            accessToken: shopifyStore.accessToken,
+            name: body.themeName,
+            zipUrl: body.zipUrl,
+            themeRole: body.themeRole,
+        })
+    }
+
+
+    @Post('upload-file')
     @UseInterceptors(FileInterceptor('file'))
     async uploadFile(
         @ShopifyStore() shopifyStore: any,

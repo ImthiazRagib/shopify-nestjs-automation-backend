@@ -30,22 +30,61 @@ export class AwsS3Service {
    */
   async uploadFile(
     file: Express.Multer.File,
+    dirName?: string,
   ): Promise<{ fileUrl: string, fileName: string }> {
     try {
       const key = `${Date.now()}-${file.originalname.replace(/\s+/g, '-').toLowerCase()}`;
+      const directory = dirName || 'shopify';
 
       const uploadResponse = await this.s3.send(new PutObjectCommand({
         Bucket: this.bucket,
-        Key: `shopify/${key}`,
+        Key: `${directory}/${key}`,
         Body: file.buffer,
         ContentType: file.mimetype,
         // ACL: 'public-read' as const,
       }));
 
-      const fileUrl = `https://${this.bucket}.s3.${this.region}.amazonaws.com/shopify/${key}`;
+      const fileUrl = `https://${this.bucket}.s3.${this.region}.amazonaws.com/${directory}/${key}`;
       return { fileUrl, fileName: key };
     } catch (error) {
       this.logger.error('❌ S3 upload failed:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Uploads a local file to S3 and deletes it from the local folder
+   * @param filePath Absolute path to the local file
+   * @param dirName Optional S3 directory (default: 'shopify')
+   */
+  async uploadFileByPath(
+    filePath: string,
+    dirName?: string,
+  ): Promise<{ fileUrl: string; fileName: string }> {
+    try {
+      const fs = await import('fs/promises');
+      const path = await import('path');
+
+      const buffer = await fs.readFile(filePath);
+      const originalName = path.basename(filePath);
+      const key = `${Date.now()}-${originalName.replace(/\s+/g, '-').toLowerCase()}`;
+      const directory = dirName || 'shopify';
+
+      await this.s3.send(
+        new PutObjectCommand({
+          Bucket: this.bucket,
+          Key: `${directory}/${key}`,
+          Body: buffer,
+          ContentType: 'application/octet-stream',
+        }),
+      );
+
+      await fs.unlink(filePath);
+
+      const fileUrl = `https://${this.bucket}.s3.${this.region}.amazonaws.com/${directory}/${key}`;
+      return { fileUrl, fileName: key };
+    } catch (error) {
+      this.logger.error('❌ S3 upload-by-path failed:', error.message);
       throw error;
     }
   }

@@ -380,30 +380,43 @@ export class ThemesService {
      * Step 2️⃣: Zip the updated folder and upload to S3 (or local)
      */
     async finalizeThemeAndUpload({
+        shopifyStore,
         extractPath,
         themeName,
     }: {
+        shopifyStore: any;
         extractPath: string;
         themeName: string;
-    }): Promise<{ updatedZipPath: string; s3Url?: string } | void> {
+    }): Promise<string> {
         try {
             const updatedZipPath = path.join(this.updatedPath, `${themeName}_updated.zip`);
             ensureDir(this.updatedPath);
 
             // Zip updated folder
-            await zipFolder(extractPath, updatedZipPath);
+             await zipFolder(extractPath, updatedZipPath);
 
-            // console.log(`📦 Zipped theme saved at ${updatedZipPath}`);
+            console.log(`📦 Zipped theme saved at ${updatedZipPath}`);
 
-            // // Upload to S3
-            // const s3Url = await uploadToS3(updatedZipPath, `themes/${themeName}_updated.zip`);
+            // Upload to S3
+            const s3Url = await this.awsS3Service.uploadFileByPath(updatedZipPath, `themes`);
 
-            // console.log(`☁️ Uploaded to S3: ${s3Url}`);
+            console.log(`☁️ Uploaded to S3: ${s3Url}`);
 
             // Optional: cleanup extracted files
-            // deleteFolderRecursive(path.dirname(extractPath));
+            deleteFolderRecursive(path.dirname(extractPath));
 
-            // return { updatedZipPath, s3Url };
+            await this.uploadTheme(
+                {
+                    shopId: shopifyStore.shopId,
+                    accessToken: shopifyStore.accessToken,
+                    name: themeName,
+                    zipUrl: s3Url.fileUrl,
+                    themeRole: ShopifyThemeRole.UNPUBLISHED,
+
+                }
+            )
+
+            return s3Url.fileUrl;
         } catch (err: any) {
             console.error('❌ finalizeThemeAndUpload error:', err);
             throw new InternalServerErrorException('Failed to finalize and upload theme');
@@ -446,7 +459,7 @@ export class ThemesService {
 
             // ✅ Correct Shopify GraphQL endpoint
             const endpoint = `${shopUrl}/graphql.json`;
-            const s3FileUrl = await this.awsS3Service.uploadFile(file);
+            const s3FileUrl = await this.awsS3Service.uploadFile(file, 'images');
 
             // ✅ Updated GraphQL query (correct fragments for File type)
             const query = `
@@ -477,7 +490,7 @@ export class ThemesService {
             const variables = {
                 files: [
                     {
-                        originalSource: s3FileUrl,
+                        originalSource: s3FileUrl.fileUrl,
                         contentType: 'IMAGE',
                         alt: file.originalname || 'Uploaded via NestJS',
                     },
@@ -530,44 +543,35 @@ export class ThemesService {
         }
     }
 
-    // async uploadThemeAsset(payload: {
-    //     shopId: string;
-    //     accessToken: string;
-    //     themeId: string;
-    //     file: Express.Multer.File;
-    // }) {
-    //     try {
-    //         const { shopId, accessToken, themeId, file } = payload;
-    //         const { shopUrl } = await this.getShopifyStoreUrl({ shopId, accessToken });
+    async uploadAndUpdateimages({
+        shopId,
+        accessToken,
+        file,
+        themeFilePath,
+        jsonFilePath,
+        sectionKey,
+        field,
+    }: {
+        shopId: string;
+        accessToken: string;
+        file: Express.Multer.File;
+        themeFilePath: string; // can be .zip or folder
+        jsonFilePath?: string; // default to 'config/settings_data.json'
+        sectionKey: string;
+        field: string;
+    }) {
+        const fileData = await this.uploadToShopifyFiles({ shopId, accessToken, file });
 
-    //         // ✅ Correct Shopify GraphQL endpoint
-    //         const endpoint = `${shopUrl}/themes/${themeId}/assets.json`;
-    //         console.log("🚀 ~ ThemesService ~ uploadThemeAsset ~ endpoint:", endpoint)
-    //         const imagePath = '/path/to/local/image.jpg';
-    //         const fileName = file.originalname;
-    //         const fileData = file.stream;
+        // * then update theme locally
+        await this.updateThemeLocally({
+            themeFilePath: themeFilePath, // can be .zip or folder
+            jsonFilePath: jsonFilePath || 'config/settings_data.json',
+            sectionKey,
+            field,
+            newValue: fileData.url,
+        });
 
-    //         const response = await this.httpService.axiosRef.put(
-    //             endpoint,
-    //             {
-    //                 asset: {
-    //                     key: `assets/shop_images/${fileName}`,
-    //                     attachment: fileData,
-    //                 },
-    //             },
-    //             {
-    //                 headers: {
-    //                     'X-Shopify-Access-Token': accessToken,
-    //                     'Content-Type': 'application/json',
-    //                 },
-    //             },
-    //         );
-    //         console.log(':white_check_mark: Uploaded theme asset:', response.data.asset.public_url);
-    //         return response;
-    //     } catch (error) {
-    //         console.log("🚀 ~ ThemesService ~ uploadThemeAsset ~ error:", error)
-    //         throw new HttpException(error.message || 'Failed to upload theme asset to Shopify', error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR);
-    //     }
-    // }
+        return fileData;
+    }
 
 }
