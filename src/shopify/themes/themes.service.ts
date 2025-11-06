@@ -8,7 +8,7 @@ import {
     deleteFolderRecursive,
     setNestedValue,
 } from './utils/file.util';
-import { unzipFile, zipFolder } from './utils/zip.util';
+import { unzipFile, zipTheme } from './utils/zip.util';
 // import { UpdateThemeDto } from './dto/update-theme.dto';
 import * as fs from 'fs';
 import { ShopifyThemeRole } from '../enum';
@@ -368,7 +368,6 @@ export class ThemesService {
             // 5️⃣ Save JSON
             writeJson(jsonFullPath, jsonData);
 
-            console.log(`✅ JSON updated successfully at ${jsonFullPath}`);
             return { extractPath, themeName };
         } catch (err: any) {
             console.error('❌ Theme update error:', err);
@@ -395,7 +394,7 @@ export class ThemesService {
             ensureDir(this.updatedPath);
 
             // Zip updated folder
-            await zipFolder(extractPath, updatedZipPath);
+            await zipTheme(extractPath, updatedZipPath);
 
             console.log(`📦 Zipped theme saved at ${updatedZipPath}`);
 
@@ -405,7 +404,7 @@ export class ThemesService {
             console.log(`☁️ Uploaded to S3: ${s3Url.fileUrl}`);
 
             // Optional: cleanup extracted files
-            // deleteFolderRecursive(path.dirname(extractPath));
+            deleteFolderRecursive(path.dirname(extractPath));
 
             await this.uploadTheme(
                 {

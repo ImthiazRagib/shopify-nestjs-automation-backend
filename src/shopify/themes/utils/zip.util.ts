@@ -19,18 +19,19 @@ export const unzipFile = async (zipPath: string, extractTo: string): Promise<voi
 /**
  * ✅ Zip a folder (recursively) into a ZIP file
  */
-export const zipFolder = async (folderPath: string, outputZipPath: string): Promise<void> => {
-  try {
-    const output = fs.createWriteStream(outputZipPath);
-    const archive = archiver('zip', { zlib: { level: 9 } });
+export async function zipTheme(themeDir: string, outputZip: string) {
+  const output = fs.createWriteStream(outputZip);
+  const archive = archiver('zip', { zlib: { level: 9 } });
+
+  return new Promise<void>((resolve, reject) => {
+    output.on('close', resolve);
+    archive.on('error', reject);
 
     archive.pipe(output);
-    archive.directory(folderPath, false);
-    await archive.finalize();
 
-    console.log(`✅ Created ZIP at ${outputZipPath}`);
-  } catch (error) {
-    console.error('❌ zipFolder error:', error);
-    throw error;
-  }
-};
+    // ✅ Add the contents of the directory, not the directory itself
+    archive.directory(themeDir + '/', false);
+
+    archive.finalize();
+  });
+}
