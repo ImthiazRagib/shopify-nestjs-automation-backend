@@ -75,15 +75,33 @@ export class ThemesV1Controller {
         });
     }
 
-    @Get('files')
-    async getShopifyFiles(
-        @ShopifyStore() shopifyStore: any,
-    ) {
-        const accessToken = shopifyStore.accessToken;
-        const shopId = shopifyStore.shopId;
+    // @Post('upload/asset/:themeId')
+    // @UseInterceptors(FileInterceptor('file'))
+    // async uploadAsset(
+    //     @ShopifyStore() shopifyStore: any,
+    //     @UploadedFile() file: Express.Multer.File,
+    //     @Param('themeId') themeId: string,
+    // ) {
+    //     const accessToken = shopifyStore.accessToken;
+    //     const shopId = shopifyStore.shopId;
 
-        return this.themesService.getShopifyFiles(shopId, accessToken);
-    }
+    //     return this.themesService.uploadThemeAsset({
+    //         shopId,
+    //         accessToken,
+    //         themeId,
+    //         file,
+    //     });
+    // }
+
+    // @Get('files')
+    // async getShopifyFiles(
+    //     @ShopifyStore() shopifyStore: any,
+    // ) {
+    //     const accessToken = shopifyStore.accessToken;
+    //     const shopId = shopifyStore.shopId;
+
+    //     return this.themesService.getShopifyFiles(shopId, accessToken);
+    // }
 
     @Get()
     listOfThemes(@ShopifyStore() shopifyStore: any) {

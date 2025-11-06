@@ -410,27 +410,27 @@ export class ThemesService {
         }
     }
 
-    async getShopifyFiles(shopId: string, accessToken: string) {
-        try {
-            const { shopUrl } = await this.getShopifyStoreUrl({ shopId, accessToken });
-            const url = `${shopUrl}/files.json`
-            const response = await this.httpService.axiosRef.get(
-                url,
-                {
-                    headers: {
-                        'X-Shopify-Access-Token': accessToken,
-                        'Accept': 'application/json',
-                    },
-                }
-            );
+    // async getShopifyFiles(shopId: string, accessToken: string) {
+    //     try {
+    //         const { shopUrl } = await this.getShopifyStoreUrl({ shopId, accessToken });
+    //         const url = `${shopUrl}/files.json`
+    //         const response = await this.httpService.axiosRef.get(
+    //             url,
+    //             {
+    //                 headers: {
+    //                     'X-Shopify-Access-Token': accessToken,
+    //                     'Accept': 'application/json',
+    //                 },
+    //             }
+    //         );
 
-            // The list of files
-            return response.data.files;
-        } catch (error) {
-            console.error('Error fetching Shopify files:', error.response);
-            throw error;
-        }
-    }
+    //         // The list of files
+    //         return response.data.files;
+    //     } catch (error) {
+    //         console.error('Error fetching Shopify files:', error.response);
+    //         throw error;
+    //     }
+    // }
 
     async uploadToShopifyFiles({
         shopId,
@@ -512,12 +512,11 @@ export class ThemesService {
             const fileUrl = fileData?.image?.url || fileData?.url;
 
             // Delete the file from S3 after successful upload
-            console.log("🚀 ~ ThemesService ~ uploadToShopifyFiles ~ s3FileUrl:", s3FileUrl)
-            await this.awsS3Service.deleteFile(s3FileUrl);
+            console.log("🚀 ~ ThemesService ~ uploadToShopifyFiles ~ s3FileUrl:", s3FileUrl.fileUrl)
+            await this.awsS3Service.deleteFile(s3FileUrl.fileUrl);
             return {
                 id: fileData.id,
-                alt: fileData.alt,
-                url: fileUrl,
+                url: `shopify://shop_images/${s3FileUrl.fileName}`,
             };
         } catch (error) {
             const errorMessage =
@@ -531,36 +530,44 @@ export class ThemesService {
         }
     }
 
-        // async uploadThemeAsset(payload: {
+    // async uploadThemeAsset(payload: {
     //     shopId: string;
     //     accessToken: string;
     //     themeId: string;
     //     file: Express.Multer.File;
     // }) {
-    //     const { shopId, accessToken, themeId, file } = payload;
-    //     const { shopUrl } = await this.getShopifyStoreUrl({ shopId, accessToken });
+    //     try {
+    //         const { shopId, accessToken, themeId, file } = payload;
+    //         const { shopUrl } = await this.getShopifyStoreUrl({ shopId, accessToken });
 
-    //     // ✅ Correct Shopify GraphQL endpoint
-    //     const endpoint = `${shopUrl}//themes/${themeId}/assets.json`;
-    //     const imagePath = '/path/to/local/image.jpg';
-    //     const fileName = file.originalname;
-    //     const fileData = file.stream;
-    //     const response = await this.httpService.axiosRef.put(
-    //         endpoint,
-    //         {
-    //             asset: {
-    //                 key: `assets/shop_images/${fileName}`,
-    //                 attachment: fileData,
+    //         // ✅ Correct Shopify GraphQL endpoint
+    //         const endpoint = `${shopUrl}/themes/${themeId}/assets.json`;
+    //         console.log("🚀 ~ ThemesService ~ uploadThemeAsset ~ endpoint:", endpoint)
+    //         const imagePath = '/path/to/local/image.jpg';
+    //         const fileName = file.originalname;
+    //         const fileData = file.stream;
+
+    //         const response = await this.httpService.axiosRef.put(
+    //             endpoint,
+    //             {
+    //                 asset: {
+    //                     key: `assets/shop_images/${fileName}`,
+    //                     attachment: fileData,
+    //                 },
     //             },
-    //         },
-    //         {
-    //             headers: {
-    //                 'X-Shopify-Access-Token': accessToken,
-    //                 'Content-Type': 'application/json',
+    //             {
+    //                 headers: {
+    //                     'X-Shopify-Access-Token': accessToken,
+    //                     'Content-Type': 'application/json',
+    //                 },
     //             },
-    //         },
-    //     );
-    //     console.log(':white_check_mark: Uploaded theme asset:', response.data.asset.public_url);
+    //         );
+    //         console.log(':white_check_mark: Uploaded theme asset:', response.data.asset.public_url);
+    //         return response;
+    //     } catch (error) {
+    //         console.log("🚀 ~ ThemesService ~ uploadThemeAsset ~ error:", error)
+    //         throw new HttpException(error.message || 'Failed to upload theme asset to Shopify', error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR);
+    //     }
     // }
 
 }

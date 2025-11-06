@@ -30,7 +30,7 @@ export class AwsS3Service {
    */
   async uploadFile(
     file: Express.Multer.File,
-  ): Promise<string> {
+  ): Promise<{ fileUrl: string, fileName: string }> {
     try {
       const key = `${Date.now()}-${file.originalname.replace(/\s+/g, '-').toLowerCase()}`;
 
@@ -43,7 +43,7 @@ export class AwsS3Service {
       }));
 
       const fileUrl = `https://${this.bucket}.s3.${this.region}.amazonaws.com/shopify/${key}`;
-      return fileUrl;
+      return { fileUrl, fileName: key };
     } catch (error) {
       this.logger.error('❌ S3 upload failed:', error.message);
       throw error;
@@ -58,9 +58,9 @@ export class AwsS3Service {
     const urlParts = fileUrl.split('.com/');
     const key = urlParts[1]; // shopify/2024-04-12T12:00:00Z-image.png
     console.log("🚀 ~ AwsS3Service ~ deleteFile ~ key:", {
-        Bucket: bucketName,
-        Key: key,
-      })
+      Bucket: bucketName,
+      Key: key,
+    })
     if (!key) throw new Error('Invalid S3 file URL');
 
 
