@@ -205,35 +205,6 @@ export class ShopController {
         }, accessToken,);
     }
 
-    @Get('themes')
-    listOfThemes(@ShopifyStore() shopifyStore: any) {
-        const accessToken = shopifyStore.accessToken;
-        const shopId = shopifyStore.shopId;
-        return this.shopService.listOfThemes(shopId, accessToken);
-    }
-
-    @Post('themes/:themeId/publish')
-    publishTheme(@ShopifyStore() shopifyStore: any, @Param('themeId', ParseIntPipe) themeId: number) {
-        const accessToken = shopifyStore.accessToken;
-        const shopId = shopifyStore.shopId;
-        return this.shopService.publishTheme({
-            shopId: shopId,
-            accessToken,
-            themeId: themeId,
-        });
-    }
-
-    @Post('themes/upload')
-    uploadTheme(@ShopifyStore() shopifyStore: any, @Body() payload: UploadThemeDto) {
-        const accessToken = shopifyStore.accessToken;
-        const shopId = shopifyStore.shopId;
-        return this.shopService.uploadTheme({
-            shopId: shopId,
-            accessToken,
-            ...payload,
-        });
-    }
-
     @Get('locations')
     getLocations(@ShopifyStore() shopifyStore: any, @Query() query: GetOrdersDto) {
         const accessToken = shopifyStore.accessToken;

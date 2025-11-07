@@ -9,6 +9,7 @@ import { ShopifyStorefrontModule } from './shopify-storefront/shopify-storefront
 import { ShopifyOAuthModule } from './shopify-o-auth/shopify-o-auth.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ShopModule } from './shopify/shop/shop.module';
+import { AwsS3Module } from './s3-bucket/s3-bucket.module';
 
 @Module({
   imports: [    // Load .env globally
@@ -25,6 +26,7 @@ import { ShopModule } from './shopify/shop/shop.module';
     ShopifyModule,
     AuthModule,
     ShopifyOAuthModule,
+    AwsS3Module,
     // ShopifyPartnerModule,
     // ShopifyStorefrontModule,
   ],
