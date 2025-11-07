@@ -84,7 +84,7 @@ export class AwsS3Service {
       const fileUrl = `https://${this.bucket}.s3.${this.region}.amazonaws.com/${directory}/${key}`;
 
       // * Delete the file from S3 after uploading
-      await this.deleteFile(fileUrl);
+      // await this.deleteFile(fileUrl);
       console.log(`🚀 ~ AwsS3Service ~ uploadFileByPath ~ { fileUrl, fileName: key }:`, { fileUrl, fileName: key })
       return { fileUrl, fileName: key };
     } catch (error) {
