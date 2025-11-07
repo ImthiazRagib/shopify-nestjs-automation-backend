@@ -157,13 +157,14 @@ export class ThemesService {
 
         const themeName = path.basename(themeFilePath, path.extname(themeFilePath));
         const tempDir = path.join(this.basePath, `${themeName}_workdir`);
-        const extractPath = path.join(tempDir, 'unzipped');
+        const extractPath = path.join(tempDir);
 
-        ensureDir(tempDir);
 
         try {
             // 1️⃣ Unzip or copy folder
-            if (themeFilePath.endsWith('.zip')) {
+            if (fs.existsSync(tempDir)) {
+                ensureDir(tempDir);
+            } else if (themeFilePath.endsWith('.zip')) {
                 await unzipFile(`${this.themePath}${themeFilePath}`, extractPath);
             } else if (fs.statSync(themeFilePath).isDirectory()) {
                 fs.cpSync(themeFilePath, extractPath, { recursive: true });
@@ -232,7 +233,7 @@ export class ThemesService {
 
             console.log(`☁️ Uploaded to S3: ${s3Url.fileUrl}`);
 
-            
+
             await this.uploadTheme(
                 {
                     shopId: shopifyStore.shopId,
@@ -240,7 +241,7 @@ export class ThemesService {
                     name: themeName,
                     zipUrl: s3Url.fileUrl,
                     themeRole: themeRole,
-                    
+
                 }
             )
             // Optional: cleanup extracted files

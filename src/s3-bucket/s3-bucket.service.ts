@@ -32,6 +32,7 @@ export class AwsS3Service {
     file: Express.Multer.File,
     dirName?: string,
   ): Promise<{ fileUrl: string, fileName: string }> {
+    console.log("🚀 ~ AwsS3Service ~ uploadFile ~ file: Express.Multer.File - dirName?: string,:", file, dirName)
     try {
       const key = `${Date.now()}-${file.originalname.replace(/\s+/g, '-').toLowerCase()}`;
       const directory = dirName || 'shopify';

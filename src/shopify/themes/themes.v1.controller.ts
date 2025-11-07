@@ -49,6 +49,7 @@ export class ThemesV1Controller {
     @Post('update-image')
     @UseInterceptors(FileInterceptor('file'))
     uploadAndUpdateimages(@ShopifyStore() shopifyStore: any, @UploadedFile() file: Express.Multer.File, @Body() body: any) {
+        console.log("🚀 ~ ThemesV1Controller ~ uploadAndUpdateimages ~ file:", file)
         const accessToken = shopifyStore.accessToken;
         const shopId = shopifyStore.shopId;
         return this.themesService.uploadAndUpdateimages({
