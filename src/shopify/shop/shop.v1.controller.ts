@@ -1,4 +1,4 @@
-import { Controller, Query, Req, UseGuards } from '@nestjs/common';
+import { Controller, HttpCode, HttpException, HttpStatus, Query, Req, UseGuards } from '@nestjs/common';
 import { ShopService } from './shop.service';
 import { Post, Body, Get, Param, ParseIntPipe, Put, Delete } from '@nestjs/common';
 import { CreateOrderCapturePaymentDto, CreateOrderDto, CreateOrderFulfillmentDto, GetOrdersDto, QueryShopProductDto, RequestShopifyFulfillmentDto, UpdateFulfillmentDto, UploadThemeDto } from './dto/shop.v1.dto';
@@ -213,5 +213,25 @@ export class ShopController {
             ...query,
             shopId: shopId,
         }, accessToken,);
+    }
+
+    @Post('register-webhook')
+    @HttpCode(HttpStatus.OK)
+    async register(@ShopifyStore() shopifyStore: any, @Body() body: {
+        topic: string
+    }) {
+        const shopId = shopifyStore.shopId;
+        const accessToken = shopifyStore.accessToken
+
+        if (!body.topic) {
+            throw new HttpException('Topic is required!', HttpStatus.BAD_REQUEST)
+        }
+
+        const result = await this.shopService.registerWebhook(body.topic, shopId, accessToken);
+        return {
+            success: true,
+            message: 'Webhook registered successfully',
+            result,
+        };
     }
 }

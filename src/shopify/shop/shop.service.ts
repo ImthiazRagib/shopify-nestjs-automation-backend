@@ -8,6 +8,7 @@ import { ShopifyStore } from './models/shopify-shop.model';
 @Injectable()
 export class ShopService {
     private version = process.env.SHOPIFY_API_VERSION;
+    private webhookAddress = process.env.WEBHOOK_ADDRESS
 
     constructor(
         private readonly httpService: HttpService,
@@ -16,11 +17,15 @@ export class ShopService {
     }
 
     async checkAccessTokenExist(payload: {
-        accessToken: string;
+        accessToken?: string;
+        shopId?: string
     }) {
         try {
             const shop = await this.storeModel.findOne({
-                accessToken: payload.accessToken,
+                $or: [
+                    { accessToken: payload.accessToken },
+                    { shopId: payload.shopId },
+                ],
             }).exec();
 
             if (!shop) {
@@ -836,6 +841,39 @@ export class ShopService {
             }
         )
         return locations;
+    }
+
+    async registerWebhook(topic: string, shopId: string, accessToken: string): Promise<any> {
+        try {
+            const {
+                shopUrl,
+            } = await this.getShopifyStoreUrl({ shopId: shopId, accessToken: accessToken });
+
+            const url = `${shopUrl}/webhooks.json`;
+
+            const data = {
+                webhook: {
+                    topic,
+                    address: this.webhookAddress,
+                    format: 'json',
+                },
+            };
+
+            const response = await this.httpService.axiosRef.post(url, data, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Shopify-Access-Token': accessToken,
+                },
+            });
+
+            return response;
+        } catch (error) {
+            console.error('Failed to register Shopify webhook:', error?.response || error);
+            throw new HttpException(
+                error?.response || 'Webhook registration failed',
+                error?.response?.status || HttpStatus.BAD_REQUEST,
+            );
+        }
     }
 
     /**
