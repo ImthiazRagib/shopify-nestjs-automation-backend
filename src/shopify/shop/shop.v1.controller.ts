@@ -234,4 +234,12 @@ export class ShopController {
             result,
         };
     }
+
+    @Get('register-webhook')
+    async getRegister(@ShopifyStore() shopifyStore: any) {
+        const shopId = shopifyStore.shopId;
+        const accessToken = shopifyStore.accessToken
+
+        return await this.shopService.getRegisteredWebhook(shopId, accessToken);
+    }
 }

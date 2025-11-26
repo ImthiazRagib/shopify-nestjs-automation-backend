@@ -868,9 +868,34 @@ export class ShopService {
 
             return response;
         } catch (error) {
-            console.error('Failed to register Shopify webhook:', error?.response || error);
+            console.error('Failed to register Shopify webhook:', error?.response.data || error);
             throw new HttpException(
-                error?.response || 'Webhook registration failed',
+                error?.response.data || 'Webhook registration failed',
+                error?.response?.status || HttpStatus.BAD_REQUEST,
+            );
+        }
+    }
+
+    async getRegisteredWebhook(shopId: string, accessToken: string): Promise<any> {
+        try {
+            const {
+                shopUrl,
+            } = await this.getShopifyStoreUrl({ shopId: shopId, accessToken: accessToken });
+
+            const url = `${shopUrl}/webhooks.json`;
+
+            const response = await this.httpService.axiosRef.get(url, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Shopify-Access-Token': accessToken,
+                },
+            });
+
+            return response;
+        } catch (error) {
+            console.error('Failed to register Shopify webhook:', error?.response.data || error);
+            throw new HttpException(
+                error?.response?.data || 'Webhook failed',
                 error?.response?.status || HttpStatus.BAD_REQUEST,
             );
         }
