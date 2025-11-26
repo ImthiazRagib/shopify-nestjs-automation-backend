@@ -14,6 +14,7 @@ export class ShopifyWebhookService {
 
     async processWebhook(ctx: ShopifyWebhookContext): Promise<void> {
         const { topic, shopDomain, payload } = ctx;
+        console.log("🚀 ~ ShopifyWebhookService ~ processWebhook ~ ctx:", ctx)
 
         switch (topic) {
             case 'orders/create':

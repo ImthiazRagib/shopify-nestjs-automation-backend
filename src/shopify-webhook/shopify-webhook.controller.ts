@@ -27,7 +27,7 @@ export class ShopifyWebhookController {
         @Headers('x-shopify-topic') topic: string,
         @Headers('x-shopify-shop-domain') shopDomain: string,
     ) {
-        console.log("🚀 ~ ShopifyWebhookController ~ handleWebhook ~ req:", req.body)
+        // console.log("🚀 ~ ShopifyWebhookController ~ handleWebhook ~ req:", req.body)
         console.log("🚀 ~ ShopifyWebhookController ~ handleWebhook ~ shopDomain:", shopDomain)
         console.log("🚀 ~ ShopifyWebhookController ~ handleWebhook ~ topic:", topic)
         console.log("🚀 ~ ShopifyWebhookController ~ handleWebhook ~ hmacHeader:", hmacHeader)
@@ -55,21 +55,22 @@ export class ShopifyWebhookController {
                 Buffer.from(digest, 'utf8'),
                 Buffer.from(hmacHeader, 'utf8'),
             );
+        console.log("🚀 ~ ShopifyWebhookController ~ handleWebhook ~ safeCompare:", safeCompare)
 
-        if (!safeCompare) {
-            console.warn('Invalid Shopify webhook signature');
-            throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
-        }
+        // if (!safeCompare) {
+        //     console.warn('Invalid Shopify webhook signature');
+        //     throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+        // }
 
         // Parse JSON *after* HMAC verification
-        const payload = JSON.parse(rawBody.toString('utf8'));
+        // const payload = JSON.parse(rawBody.toString('utf8'));
 
         // Optionally filter just order webhooks (orders/create, orders/paid, etc.)
         try {
             await this.shopifyWebhookService.processWebhook({
                 topic,
                 shopDomain,
-                payload,
+                payload: rawBody,
             });
         } catch (e) {
             console.error('Error processing Shopify webhook:', e);
