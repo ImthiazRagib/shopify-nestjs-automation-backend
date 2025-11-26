@@ -4,6 +4,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreateOrderDto, GetOrdersDto, QueryShopDto, QueryShopProductDto } from './dto/shop.v1.dto';
 import { ShopifyStore } from './models/shopify-shop.model';
+import { lastValueFrom } from 'rxjs';
 
 @Injectable()
 export class ShopService {
@@ -825,7 +826,7 @@ export class ShopService {
             {
                 shopId: query.shopId,
                 accessToken,
-                endpoint: 'shop.json',
+                endpoint: '/shop.json',
             }
         )
         return shopInfo;
@@ -871,6 +872,42 @@ export class ShopService {
             console.error('Failed to register Shopify webhook:', error?.response.data || error);
             throw new HttpException(
                 error?.response.data || 'Webhook registration failed',
+                error?.response?.status || HttpStatus.BAD_REQUEST,
+            );
+        }
+    }
+
+    async testWebhooks(webhookId: string, shopId: string, accessToken: string): Promise<any> {
+        try {
+            const {
+                shopUrl,
+            } = await this.getShopifyStoreUrl({ shopId: shopId, accessToken: accessToken });
+
+            const url = `${shopUrl}/webhooks/${webhookId}/tests.json`;
+
+            const observable = this.httpService.post(
+                url,
+                "{}", // empty body
+                {
+                    headers: {
+                        'X-Shopify-Access-Token': accessToken, // store access token
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json', // crucial to avoid 406
+                    },
+                },
+            );
+
+            // Convert observable to promise
+            const response = await lastValueFrom(observable);
+
+            return {
+                status: 'success',
+                data: response.data,
+            };
+        } catch (error) {
+            console.error('Failed to test Shopify webhook:', error?.response.data || error);
+            throw new HttpException(
+                error?.response.data || 'Webhook test failed',
                 error?.response?.status || HttpStatus.BAD_REQUEST,
             );
         }
