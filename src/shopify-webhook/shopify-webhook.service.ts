@@ -81,19 +81,41 @@ export class ShopifyWebhookService {
         }
     }
 
+    async findOrderById(query: {
+        orderId?: number | string;
+        topic?: string
+    }): Promise<ShopifyOrderDocument | null> {
+        const { orderId, topic } = query;
+        const where: any = {}
+
+        if (orderId) {
+            where.orderId = orderId
+        }
+
+        if (topic) {
+            where.topic = topic
+        }
+
+
+        return await this.orderModel.findOne({ ...where }).exec();
+    }
+
     private async handleOrderCreated(webhookInfo: {
         shopDomain: string;
         topic: string;
     }, order: any) {
-        console.log('New order from Shopify:', {
-            ...order,
-            webhookInfo,
-        });
-
         try {
             // Example: save to DB, dispatch job, etc.
+            const { id, ...rest } = order;
+
+            const existedOrder = await this.findOrderById({
+                orderId: id
+            })
+            if (existedOrder?.webhookInfo.topic === webhookInfo.topic) return;
+
             const createdOrder = new this.orderModel({
-                ...order,
+                order_id: id,
+                ...rest,
                 webhookInfo,
             } as ShopifyOrder);
             await createdOrder.save();
@@ -109,32 +131,104 @@ export class ShopifyWebhookService {
         shopDomain: string;
         topic: string;
     }, order: any) {
-        console.log('Order paid:', webhookInfo, order);
-        // Update payment status in your system
+        try {
+            const { id, ...rest } = order;
+
+            const existedOrder = await this.findOrderById({
+                orderId: id
+            })
+            if (existedOrder?.webhookInfo.topic === webhookInfo.topic) return;
+
+            const createdOrder = new this.orderModel({
+                order_id: id,
+                ...rest,
+                webhookInfo,
+            } as ShopifyOrder);
+            await createdOrder.save();
+        } catch (error) {
+            throw new HttpException(
+                `Failed to save order webhook: ${error.message}`,
+                HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
     }
 
     private async handleOrderPartialyFulfilled(webhookInfo: {
         shopDomain: string;
         topic: string;
     }, order: any) {
-        console.log('Order fulfilled:', webhookInfo, order);
-        // Update fulfillment status, notify logistics, etc.
+        try {
+            const { id, ...rest } = order;
+
+            const existedOrder = await this.findOrderById({
+                orderId: id
+            })
+            if (existedOrder?.webhookInfo.topic === webhookInfo.topic) return;
+
+            const createdOrder = new this.orderModel({
+                order_id: id,
+                ...rest,
+                webhookInfo,
+            } as ShopifyOrder);
+            await createdOrder.save();
+        } catch (error) {
+            throw new HttpException(
+                `Failed to save order webhook: ${error.message}`,
+                HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
     }
 
     private async handleOrderCanceled(webhookInfo: {
         shopDomain: string;
         topic: string;
     }, order: any) {
-        console.log('handleOrderCanceled', webhookInfo, order);
-        // Update fulfillment status, notify logistics, etc.
+        try {
+            const { id, ...rest } = order;
+
+            const existedOrder = await this.findOrderById({
+                orderId: id
+            })
+            if (existedOrder?.webhookInfo.topic === webhookInfo.topic) return;
+
+            const createdOrder = new this.orderModel({
+                order_id: id,
+                ...rest,
+                webhookInfo,
+            } as ShopifyOrder);
+            await createdOrder.save();
+        } catch (error) {
+            throw new HttpException(
+                `Failed to save order webhook: ${error.message}`,
+                HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
     }
 
     private async handleOrderUpdated(webhookInfo: {
         shopDomain: string;
         topic: string;
     }, order: any) {
-        console.log('handleOrderUpdated', webhookInfo, order);
-        // Update fulfillment status, notify logistics, etc.
+        try {
+            const { id, ...rest } = order;
+
+            const existedOrder = await this.findOrderById({
+                orderId: id
+            })
+            if (existedOrder?.webhookInfo.topic === webhookInfo.topic) return;
+
+            const createdOrder = new this.orderModel({
+                order_id: id,
+                ...rest,
+                webhookInfo,
+            } as ShopifyOrder);
+            await createdOrder.save();
+        } catch (error) {
+            throw new HttpException(
+                `Failed to save order webhook: ${error.message}`,
+                HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
     }
 
     private async handleRefundCreated(webhookInfo: {
@@ -142,15 +236,45 @@ export class ShopifyWebhookService {
         topic: string;
     }, order: any) {
         console.log('handleRefundCreated', webhookInfo, order);
-        // Update fulfillment status, notify logistics, etc.
+        // try {
+        //     // Example: save to DB, dispatch job, etc.
+        //     const createdOrder = new this.orderModel({
+        //         ...order,
+        //         webhookInfo,
+        //     } as ShopifyOrder);
+        //     await createdOrder.save();
+        // } catch (error) {
+        //     throw new HttpException(
+        //         `Failed to save order webhook: ${error.message}`,
+        //         HttpStatus.INTERNAL_SERVER_ERROR
+        //     );
+        // }
     }
 
     private async handleOrderFulfilled(webhookInfo: {
         shopDomain: string;
         topic: string;
     }, order: any) {
-        console.log('handleOrderFulfilled', webhookInfo, order);
-        // Update fulfillment status, notify logistics, etc.
+        try {
+            const { id, ...rest } = order;
+
+            const existedOrder = await this.findOrderById({
+                orderId: id
+            })
+            if (existedOrder?.webhookInfo.topic === webhookInfo.topic) return;
+
+            const createdOrder = new this.orderModel({
+                order_id: id,
+                ...rest,
+                webhookInfo,
+            } as ShopifyOrder);
+            await createdOrder.save();
+        } catch (error) {
+            throw new HttpException(
+                `Failed to save order webhook: ${error.message}`,
+                HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
     }
 
     private async handleCustomerCreated(webhookInfo: {

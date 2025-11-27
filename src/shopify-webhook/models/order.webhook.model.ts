@@ -3,12 +3,12 @@ import { Document } from 'mongoose';
 
 export type ShopifyOrderDocument = ShopifyOrder & Document;
 
-@Schema({ timestamps: true })
+@Schema({ timestamps: true, collection: 'shopify_orders' })
 export class ShopifyOrder {
-    @Prop({ required: true })
-    id: number;
+    @Prop({})
+    order_id: number;
 
-    @Prop({ required: true })
+    @Prop({})
     admin_graphql_api_id: string;
 
     @Prop()
@@ -50,7 +50,7 @@ export class ShopifyOrder {
     @Prop()
     created_at: string;
 
-    @Prop({ required: true })
+    @Prop({})
     currency: string;
 
     // ---- Current / Price sets ----
@@ -278,11 +278,14 @@ export class ShopifyOrder {
     line_item_groups: Record<string, any>[];
 
     // Store complete raw payload
-    @Prop({ type: Object, required: true })
+    @Prop({ type: Object })
     rawData: Record<string, any>;
 
-    @Prop({ type: Object, required: true })
+    @Prop({ type: Object })
     webhookInfo: Record<string, any>;
+
+    @Prop({ default: false })
+    isTracked: boolean;
 }
 
 export const ShopifyOrderSchema = SchemaFactory.createForClass(ShopifyOrder);

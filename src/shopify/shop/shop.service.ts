@@ -877,29 +877,32 @@ export class ShopService {
         }
     }
 
-    async testWebhooks(webhookId: string, shopId: string, accessToken: string): Promise<any> {
+    async updateRegisteredWebhooks(webhookId: string, shopId: string, accessToken: string): Promise<any> {
         try {
             const {
                 shopUrl,
             } = await this.getShopifyStoreUrl({ shopId: shopId, accessToken: accessToken });
 
-            const url = `${shopUrl}/webhooks/${webhookId}/tests.json`;
+            const url = `${shopUrl}/webhooks/${webhookId}.json`;
 
-            const observable = this.httpService.post(
+            const observable = this.httpService.put(
                 url,
-                "{}", // empty body
+                {
+                    webhook: {
+                        id: webhookId,
+                        address: this.webhookAddress,
+                    },
+                },
                 {
                     headers: {
-                        'X-Shopify-Access-Token': accessToken, // store access token
+                        'X-Shopify-Access-Token': accessToken,
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json', // crucial to avoid 406
+                        'Accept': 'application/json',
                     },
                 },
             );
 
-            // Convert observable to promise
             const response = await lastValueFrom(observable);
-
             return {
                 status: 'success',
                 data: response.data,
@@ -930,9 +933,9 @@ export class ShopService {
 
             return response;
         } catch (error) {
-            console.error('Failed to register Shopify webhook:', error?.response.data || error);
+            console.error('Failed to update registered Shopify webhook:', error?.response.data || error);
             throw new HttpException(
-                error?.response?.data || 'Webhook failed',
+                error?.response?.data || 'Webhook update failed',
                 error?.response?.status || HttpStatus.BAD_REQUEST,
             );
         }

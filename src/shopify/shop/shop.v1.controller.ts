@@ -244,10 +244,10 @@ export class ShopController {
     }
 
 
-    @Post('test-webhook')
+    @Put('update-webhook')
     @HttpCode(HttpStatus.OK)
-    async testRegisteredWebhooks(@ShopifyStore() shopifyStore: any, @Body() body: {
-        id: string
+    async updateRegisteredWebhooks(@ShopifyStore() shopifyStore: any, @Body() body: {
+        id: string;
     }) {
         const shopId = shopifyStore.shopId;
         const accessToken = shopifyStore.accessToken
@@ -256,7 +256,7 @@ export class ShopController {
             throw new HttpException('Id is required!', HttpStatus.BAD_REQUEST)
         }
 
-        const result = await this.shopService.testWebhooks(body.id, shopId, accessToken);
+        const result = await this.shopService.updateRegisteredWebhooks(body.id, shopId, accessToken);
         return {
             success: true,
             message: 'Webhook registered successfully',

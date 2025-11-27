@@ -37,21 +37,21 @@ export class ShopifyWebhookController {
                 throw new HttpException('Internal Server Error', HttpStatus.INTERNAL_SERVER_ERROR);
             }
 
-            const rawBody = (req as any).body; // because of bodyParser.raw
-            const digest = crypto
-                .createHmac('sha256', secret)
-                .update(rawBody, 'utf8')
-                .digest('base64');
-            console.log("🚀 ~ ShopifyWebhookController ~ handleWebhook ~ digest:", digest)
+            // const rawBody = (req as any).body; // because of bodyParser.raw
+            // const digest = crypto
+            //     .createHmac('sha256', secret)
+            //     .update(rawBody, 'utf8')
+            //     .digest('base64');
+            // console.log("🚀 ~ ShopifyWebhookController ~ handleWebhook ~ digest:", digest)
 
-            // Protect against timing attacks
-            const safeCompare =
-                hmacHeader &&
-                crypto.timingSafeEqual(
-                    Buffer.from(digest, 'utf8'),
-                    Buffer.from(hmacHeader, 'utf8'),
-                );
-            console.log("🚀 ~ ShopifyWebhookController ~ handleWebhook ~ safeCompare:", safeCompare)
+            // // Protect against timing attacks
+            // const safeCompare =
+            //     hmacHeader &&
+            //     crypto.timingSafeEqual(
+            //         Buffer.from(digest, 'utf8'),
+            //         Buffer.from(hmacHeader, 'utf8'),
+            //     );
+            // console.log("🚀 ~ ShopifyWebhookController ~ handleWebhook ~ safeCompare:", safeCompare)
 
             // if (!safeCompare) {
             //     console.warn('Invalid Shopify webhook signature');
