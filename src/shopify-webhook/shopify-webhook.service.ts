@@ -105,18 +105,18 @@ export class ShopifyWebhookService {
         topic: string;
     }, order: any) {
         try {
-            // Example: save to DB, dispatch job, etc.
-            const { id, ...rest } = order;
-
-            const existedOrder = await this.findOrderById({
-                orderId: id
-            })
-            if (existedOrder?.webhookInfo.topic === webhookInfo.topic) return;
+            // const existedOrder = await this.findOrderById({
+            //     orderId: id
+            // })
+            // if (existedOrder?.webhookInfo.topic === webhookInfo.topic) return;
 
             const createdOrder = new this.orderModel({
-                order_id: id,
-                ...rest,
+                payload: order,
                 webhookInfo,
+                // quick_drop_x_webhook: {},
+                // quick_drop_x_webhook_response: {},
+                // cronjob_executed: false,
+                // executedAt: 
             } as ShopifyOrder);
             await createdOrder.save();
         } catch (error) {
@@ -132,17 +132,20 @@ export class ShopifyWebhookService {
         topic: string;
     }, order: any) {
         try {
-            const { id, ...rest } = order;
+            // const { id, ...rest } = order;
 
-            const existedOrder = await this.findOrderById({
-                orderId: id
-            })
-            if (existedOrder?.webhookInfo.topic === webhookInfo.topic) return;
+            // const existedOrder = await this.findOrderById({
+            //     orderId: id
+            // })
+            // if (existedOrder?.webhookInfo.topic === webhookInfo.topic) return;
 
             const createdOrder = new this.orderModel({
-                order_id: id,
-                ...rest,
+                payload: order,
                 webhookInfo,
+                // quick_drop_x_webhook: {},
+                // quick_drop_x_webhook_response: {},
+                // cronjob_executed: false,
+                // executedAt: 
             } as ShopifyOrder);
             await createdOrder.save();
         } catch (error) {
@@ -158,17 +161,20 @@ export class ShopifyWebhookService {
         topic: string;
     }, order: any) {
         try {
-            const { id, ...rest } = order;
+            // const { id, ...rest } = order;
 
-            const existedOrder = await this.findOrderById({
-                orderId: id
-            })
-            if (existedOrder?.webhookInfo.topic === webhookInfo.topic) return;
+            // const existedOrder = await this.findOrderById({
+            //     orderId: id
+            // })
+            // if (existedOrder?.webhookInfo.topic === webhookInfo.topic) return;
 
             const createdOrder = new this.orderModel({
-                order_id: id,
-                ...rest,
+                payload: order,
                 webhookInfo,
+                // quick_drop_x_webhook: {},
+                // quick_drop_x_webhook_response: {},
+                // cronjob_executed: false,
+                // executedAt: 
             } as ShopifyOrder);
             await createdOrder.save();
         } catch (error) {
@@ -184,17 +190,20 @@ export class ShopifyWebhookService {
         topic: string;
     }, order: any) {
         try {
-            const { id, ...rest } = order;
+            // const { id, ...rest } = order;
 
-            const existedOrder = await this.findOrderById({
-                orderId: id
-            })
-            if (existedOrder?.webhookInfo.topic === webhookInfo.topic) return;
+            // const existedOrder = await this.findOrderById({
+            //     orderId: id
+            // })
+            // if (existedOrder?.webhookInfo.topic === webhookInfo.topic) return;
 
             const createdOrder = new this.orderModel({
-                order_id: id,
-                ...rest,
+                payload: order,
                 webhookInfo,
+                // quick_drop_x_webhook: {},
+                // quick_drop_x_webhook_response: {},
+                // cronjob_executed: false,
+                // executedAt: 
             } as ShopifyOrder);
             await createdOrder.save();
         } catch (error) {
@@ -210,17 +219,20 @@ export class ShopifyWebhookService {
         topic: string;
     }, order: any) {
         try {
-            const { id, ...rest } = order;
+            // const { id, ...rest } = order;
 
-            const existedOrder = await this.findOrderById({
-                orderId: id
-            })
-            if (existedOrder?.webhookInfo.topic === webhookInfo.topic) return;
+            // const existedOrder = await this.findOrderById({
+            //     orderId: id
+            // })
+            // if (existedOrder?.webhookInfo.topic === webhookInfo.topic) return;
 
             const createdOrder = new this.orderModel({
-                order_id: id,
-                ...rest,
+                payload: order,
                 webhookInfo,
+                // quick_drop_x_webhook: {},
+                // quick_drop_x_webhook_response: {},
+                // cronjob_executed: false,
+                // executedAt: 
             } as ShopifyOrder);
             await createdOrder.save();
         } catch (error) {
@@ -256,17 +268,20 @@ export class ShopifyWebhookService {
         topic: string;
     }, order: any) {
         try {
-            const { id, ...rest } = order;
+            // const { id, ...rest } = order;
 
-            const existedOrder = await this.findOrderById({
-                orderId: id
-            })
-            if (existedOrder?.webhookInfo.topic === webhookInfo.topic) return;
+            // const existedOrder = await this.findOrderById({
+            //     orderId: id
+            // })
+            // if (existedOrder?.webhookInfo.topic === webhookInfo.topic) return;
 
             const createdOrder = new this.orderModel({
-                order_id: id,
-                ...rest,
+                payload: order,
                 webhookInfo,
+                // quick_drop_x_webhook: {},
+                // quick_drop_x_webhook_response: {},
+                // cronjob_executed: false,
+                // executedAt: 
             } as ShopifyOrder);
             await createdOrder.save();
         } catch (error) {
