@@ -27,46 +27,46 @@ export class ShopifyWebhookController {
         @Headers('x-shopify-topic') topic: string,
         @Headers('x-shopify-shop-domain') shopDomain: string,
     ) {
-        // console.log("🚀 ~ ShopifyWebhookController ~ handleWebhook ~ req:", req.body)
-        console.log("🚀 ~ ShopifyWebhookController ~ handleWebhook ~ shopDomain:", shopDomain)
-        console.log("🚀 ~ ShopifyWebhookController ~ handleWebhook ~ topic:", topic)
-        console.log("🚀 ~ ShopifyWebhookController ~ handleWebhook ~ hmacHeader:", hmacHeader)
-        const secret = process.env.CLIENT_SECRET;
-        if (!secret) {
-            console.error('CLIENT_SECRET is not set');
-            throw new HttpException('Internal Server Error', HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        console.log("🚀 ~ ShopifyWebhookController ~ handleWebhook ~ req:", req.body)
+        console.log("🚀 ~ ShopifyWebhookController ~ handleWebhook ~ shopDomain:", { shopDomain, topic, hmacHeader })
 
-        const rawBody = (req as any).body; // because of bodyParser.raw
-        const digest = crypto
-            .createHmac('sha256', secret)
-            .update(rawBody, 'utf8')
-            .digest('base64');
-
-
-        // const calculatedHmacDigest = crypto.createHmac('sha256', secret).update(req.body).digest('base64');
-        // const hmacValid = crypto.timingSafeEqual(Buffer.from(calculatedHmacDigest, 'base64'), Buffer.from(hmacHeader, 'base64'));
-
-
-        // Protect against timing attacks
-        const safeCompare =
-            hmacHeader &&
-            crypto.timingSafeEqual(
-                Buffer.from(digest, 'utf8'),
-                Buffer.from(hmacHeader, 'utf8'),
-            );
-        console.log("🚀 ~ ShopifyWebhookController ~ handleWebhook ~ safeCompare:", safeCompare)
-
-        // if (!safeCompare) {
-        //     console.warn('Invalid Shopify webhook signature');
-        //     throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
-        // }
-
-        // Parse JSON *after* HMAC verification
-        // const payload = JSON.parse(rawBody.toString('utf8'));
-
-        // Optionally filter just order webhooks (orders/create, orders/paid, etc.)
         try {
+            const secret = process.env.CLIENT_SECRET;
+            if (!secret) {
+                console.error('CLIENT_SECRET is not set');
+                throw new HttpException('Internal Server Error', HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
+            const rawBody = (req as any).body; // because of bodyParser.raw
+            const digest = crypto
+                .createHmac('sha256', secret)
+                .update(rawBody, 'utf8')
+                .digest('base64');
+
+
+            // const calculatedHmacDigest = crypto.createHmac('sha256', secret).update(req.body).digest('base64');
+            // const hmacValid = crypto.timingSafeEqual(Buffer.from(calculatedHmacDigest, 'base64'), Buffer.from(hmacHeader, 'base64'));
+
+
+            // Protect against timing attacks
+            const safeCompare =
+                hmacHeader &&
+                crypto.timingSafeEqual(
+                    Buffer.from(digest, 'utf8'),
+                    Buffer.from(hmacHeader, 'utf8'),
+                );
+            console.log("🚀 ~ ShopifyWebhookController ~ handleWebhook ~ safeCompare:", safeCompare)
+
+            // if (!safeCompare) {
+            //     console.warn('Invalid Shopify webhook signature');
+            //     throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+            // }
+
+            // Parse JSON *after* HMAC verification
+            // const payload = JSON.parse(rawBody.toString('utf8'));
+
+            // Optionally filter just order webhooks (orders/create, orders/paid, etc.)
+
             await this.shopifyWebhookService.processWebhook({
                 topic,
                 shopDomain,
@@ -82,5 +82,5 @@ export class ShopifyWebhookController {
         return { status: 'ok' };
     }
 
-    
+
 }
