@@ -867,7 +867,7 @@ export class ShopService {
                 },
             });
 
-            return response;
+            return response?.data;
         } catch (error) {
             console.error('Failed to register Shopify webhook:', error?.response.data || error);
             throw new HttpException(
