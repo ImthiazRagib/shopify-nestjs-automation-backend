@@ -42,11 +42,7 @@ export class ShopifyWebhookController {
                 .createHmac('sha256', secret)
                 .update(rawBody, 'utf8')
                 .digest('base64');
-
-
-            // const calculatedHmacDigest = crypto.createHmac('sha256', secret).update(req.body).digest('base64');
-            // const hmacValid = crypto.timingSafeEqual(Buffer.from(calculatedHmacDigest, 'base64'), Buffer.from(hmacHeader, 'base64'));
-
+            console.log("🚀 ~ ShopifyWebhookController ~ handleWebhook ~ digest:", digest)
 
             // Protect against timing attacks
             const safeCompare =
@@ -68,9 +64,11 @@ export class ShopifyWebhookController {
             // Optionally filter just order webhooks (orders/create, orders/paid, etc.)
 
             await this.shopifyWebhookService.processWebhook({
-                topic,
-                shopDomain,
-                payload: rawBody,
+                webhookInfo: {
+                    topic,
+                    shopDomain,
+                },
+                payload: req.body,
             });
         } catch (e) {
             console.error('Error processing Shopify webhook:', e);

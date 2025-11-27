@@ -1,70 +1,78 @@
 // shopify-webhook.service.ts
 import { HttpService } from '@nestjs/axios';
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CUSTOMER_WEBHOOKS, ORDER_WEBHOOKS } from './enums/webhooks.enum';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { ShopifyOrder, ShopifyOrderDocument } from './models/order.webhook.model';
 
 interface ShopifyWebhookContext {
-    topic: string;
-    shopDomain: string;
+    webhookInfo: {
+        shopDomain: string
+        topic: string
+    }
     payload: any;
 }
 
 @Injectable()
 export class ShopifyWebhookService {
-    constructor() { }
+    constructor(
+        @InjectModel(ShopifyOrder.name) private readonly orderModel: Model<ShopifyOrderDocument>,
+        // @InjectModel('Customer') private readonly customerModel: Model<CustomerDocument>,
+    ) { }
 
     async processWebhook(ctx: ShopifyWebhookContext): Promise<void> {
-        const { topic, shopDomain, payload } = ctx;
-        console.log("🚀 ~ ShopifyWebhookService ~ processWebhook ~ ctx:", ctx)
+        const { webhookInfo, payload } = ctx;
+        const { topic } = webhookInfo
 
         switch (topic) {
             case ORDER_WEBHOOKS.ORDER_CREATED:
-                await this.handleOrderCreated(shopDomain, payload);
+                await this.handleOrderCreated(webhookInfo, payload);
                 break;
 
             case ORDER_WEBHOOKS.ORDER_PAID:
-                await this.handleOrderPaid(shopDomain, payload);
+                await this.handleOrderPaid(webhookInfo, payload);
                 break;
 
             case ORDER_WEBHOOKS.ORDER_FULFILLED:
-                await this.handleOrderFulfilled(shopDomain, payload);
+                await this.handleOrderFulfilled(webhookInfo, payload);
                 break;
 
             case ORDER_WEBHOOKS.ORDER_PARTIALLY_FULFILLED:
-                await this.handleOrderPartialyFulfilled(shopDomain, payload);
+                await this.handleOrderPartialyFulfilled(webhookInfo, payload);
                 break;
 
             case ORDER_WEBHOOKS.ORDER_CANCELLED:
-                await this.handleOrderCanceled(shopDomain, payload);
+                await this.handleOrderCanceled(webhookInfo, payload);
                 break;
 
             case ORDER_WEBHOOKS.ORDER_UPDATED:
-                await this.handleOrderUpdated(shopDomain, payload);
+                await this.handleOrderUpdated(webhookInfo, payload);
                 break;
 
             case ORDER_WEBHOOKS.REFUND_CREATED:
-                await this.handleRefundCreated(shopDomain, payload);
+                await this.handleRefundCreated(webhookInfo, payload);
                 break;
 
             // * Customer Methos
             case CUSTOMER_WEBHOOKS.CUSTOMER_CREATED:
-                await this.handleCustomerCreated(shopDomain, payload);
+                await this.handleCustomerCreated(webhookInfo, payload);
                 break;
 
             case CUSTOMER_WEBHOOKS.CUSTOMER_UPDATED:
-                await this.handleCustomerUpdated(shopDomain, payload);
+                await this.handleCustomerUpdated(webhookInfo, payload);
                 break;
 
             case CUSTOMER_WEBHOOKS.CUSTOMER_DELETED:
-                await this.handleCustomerDeleted(shopDomain, payload);
+                await this.handleCustomerDeleted(webhookInfo, payload);
                 break;
 
             case CUSTOMER_WEBHOOKS.CUSTOMER_REDACT:
-                await this.handleCustomerRedact(shopDomain, payload);
+                await this.handleCustomerRedact(webhookInfo, payload);
                 break;
 
             case CUSTOMER_WEBHOOKS.CUSTOMER_DATA_REQUEST:
-                await this.handleCustomerDataRequest(shopDomain, payload);
+                await this.handleCustomerDataRequest(webhookInfo, payload);
                 break;
 
             default:
@@ -73,69 +81,115 @@ export class ShopifyWebhookService {
         }
     }
 
-    private async handleOrderCreated(shopDomain: string, order: any) {
-        console.log('New order from Shopify:', shopDomain, order.id);
+    private async handleOrderCreated(webhookInfo: {
+        shopDomain: string;
+        topic: string;
+    }, order: any) {
+        console.log('New order from Shopify:', {
+            ...order,
+            webhookInfo,
+        });
 
-        // Example: save to DB, dispatch job, etc.
-        // const total = order.total_price;
-        // const currency = order.currency;
-        // const email = order.email;
-        // const lineItems = order.line_items;
-        // await this.ordersRepository.createFromShopify(order);
+        try {
+            // Example: save to DB, dispatch job, etc.
+            const createdOrder = new this.orderModel({
+                ...order,
+                webhookInfo,
+            } as ShopifyOrder);
+            await createdOrder.save();
+        } catch (error) {
+            throw new HttpException(
+                `Failed to save order webhook: ${error.message}`,
+                HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
     }
 
-    private async handleOrderPaid(shopDomain: string, order: any) {
-        console.log('Order paid:', shopDomain, order);
+    private async handleOrderPaid(webhookInfo: {
+        shopDomain: string;
+        topic: string;
+    }, order: any) {
+        console.log('Order paid:', webhookInfo, order);
         // Update payment status in your system
     }
 
-    private async handleOrderPartialyFulfilled(shopDomain: string, order: any) {
-        console.log('Order fulfilled:', shopDomain, order);
+    private async handleOrderPartialyFulfilled(webhookInfo: {
+        shopDomain: string;
+        topic: string;
+    }, order: any) {
+        console.log('Order fulfilled:', webhookInfo, order);
         // Update fulfillment status, notify logistics, etc.
     }
 
-    private async handleOrderCanceled(shopDomain: string, order: any) {
-        console.log('handleOrderCanceled', shopDomain, order);
+    private async handleOrderCanceled(webhookInfo: {
+        shopDomain: string;
+        topic: string;
+    }, order: any) {
+        console.log('handleOrderCanceled', webhookInfo, order);
         // Update fulfillment status, notify logistics, etc.
     }
 
-    private async handleOrderUpdated(shopDomain: string, order: any) {
-        console.log('handleOrderUpdated', shopDomain, order);
+    private async handleOrderUpdated(webhookInfo: {
+        shopDomain: string;
+        topic: string;
+    }, order: any) {
+        console.log('handleOrderUpdated', webhookInfo, order);
         // Update fulfillment status, notify logistics, etc.
     }
 
-    private async handleRefundCreated(shopDomain: string, order: any) {
-        console.log('handleRefundCreated', shopDomain, order);
+    private async handleRefundCreated(webhookInfo: {
+        shopDomain: string;
+        topic: string;
+    }, order: any) {
+        console.log('handleRefundCreated', webhookInfo, order);
         // Update fulfillment status, notify logistics, etc.
     }
 
-    private async handleOrderFulfilled(shopDomain: string, order: any) {
-        console.log('handleOrderFulfilled', shopDomain, order);
+    private async handleOrderFulfilled(webhookInfo: {
+        shopDomain: string;
+        topic: string;
+    }, order: any) {
+        console.log('handleOrderFulfilled', webhookInfo, order);
         // Update fulfillment status, notify logistics, etc.
     }
 
-    private async handleCustomerCreated(shopDomain: string, order: any) {
-        console.log('handleCustomerCreated', shopDomain, order);
+    private async handleCustomerCreated(webhookInfo: {
+        shopDomain: string;
+        topic: string;
+    }, order: any) {
+        console.log('handleCustomerCreated', webhookInfo, order);
         // Update fulfillment status, notify logistics, etc.
     }
 
-    private async handleCustomerUpdated(shopDomain: string, order: any) {
-        console.log('handleCustomerUpdated', shopDomain, order);
+    private async handleCustomerUpdated(webhookInfo: {
+        shopDomain: string;
+        topic: string;
+    }, order: any) {
+        console.log('handleCustomerUpdated', webhookInfo, order);
         // Update fulfillment status, notify logistics, etc.
     }
 
-    private async handleCustomerDeleted(shopDomain: string, order: any) {
-        console.log('handleCustomerDeleted', shopDomain, order);
+    private async handleCustomerDeleted(webhookInfo: {
+        shopDomain: string;
+        topic: string;
+    }, order: any) {
+        console.log('handleCustomerDeleted', webhookInfo, order);
         // Update fulfillment status, notify logistics, etc.
     }
 
-    private async handleCustomerRedact(shopDomain: string, order: any) {
-        console.log('handleCustomerRedact', shopDomain, order);
+    private async handleCustomerRedact(webhookInfo: {
+        shopDomain: string;
+        topic: string;
+    }, order: any) {
+        console.log('handleCustomerRedact', webhookInfo, order);
         // Update fulfillment status, notify logistics, etc.
     }
 
-    private async handleCustomerDataRequest(shopDomain: string, order: any) {
-        console.log('handleCustomerDataRequest', shopDomain, order);
+    private async handleCustomerDataRequest(webhookInfo: {
+        shopDomain: string;
+        topic: string;
+    }, order: any) {
+        console.log('handleCustomerDataRequest', webhookInfo, order);
         // Update fulfillment status, notify logistics, etc.
     }
 }
