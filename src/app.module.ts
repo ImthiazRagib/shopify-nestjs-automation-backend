@@ -11,6 +11,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ShopModule } from './shopify/shop/shop.module';
 import { AwsS3Module } from './s3-bucket/s3-bucket.module';
 import { ShopifyWebhookModule } from './shopify-webhook/shopify-webhook.module';
+import { ShopifyLogsModule } from './shopify-logs/shopify-logs.module';
 
 @Module({
   imports: [    // Load .env globally
@@ -29,6 +30,7 @@ import { ShopifyWebhookModule } from './shopify-webhook/shopify-webhook.module';
     ShopifyOAuthModule,
     AwsS3Module,
     ShopifyWebhookModule,
+    ShopifyLogsModule,
     // ShopifyPartnerModule,
     // ShopifyStorefrontModule,
   ],

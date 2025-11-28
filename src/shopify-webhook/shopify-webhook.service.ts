@@ -10,6 +10,7 @@ interface ShopifyWebhookContext {
     webhookInfo: {
         shopDomain: string
         topic: string
+        hmac: string
     }
     payload: any;
 }
@@ -103,6 +104,7 @@ export class ShopifyWebhookService {
     private async handleOrderCreated(webhookInfo: {
         shopDomain: string;
         topic: string;
+        hmac: string;
     }, order: any) {
         try {
             // const existedOrder = await this.findOrderById({
@@ -112,11 +114,13 @@ export class ShopifyWebhookService {
 
             const createdOrder = new this.orderModel({
                 payload: order,
-                webhookInfo,
+                topic: webhookInfo.topic,
+                shopDomain: webhookInfo.shopDomain,
+                hmacHeaders: webhookInfo.hmac
                 // quick_drop_x_webhook: {},
                 // quick_drop_x_webhook_response: {},
-                // cronjob_executed: false,
-                // executedAt: 
+                // isProcessed: false,
+                // processedAt: 
             } as ShopifyOrder);
             await createdOrder.save();
         } catch (error) {
@@ -130,6 +134,7 @@ export class ShopifyWebhookService {
     private async handleOrderPaid(webhookInfo: {
         shopDomain: string;
         topic: string;
+        hmac: string;
     }, order: any) {
         try {
             // const { id, ...rest } = order;
@@ -141,11 +146,13 @@ export class ShopifyWebhookService {
 
             const createdOrder = new this.orderModel({
                 payload: order,
-                webhookInfo,
+                topic: webhookInfo.topic,
+                shopDomain: webhookInfo.shopDomain,
+                hmacHeaders: webhookInfo.hmac
                 // quick_drop_x_webhook: {},
                 // quick_drop_x_webhook_response: {},
-                // cronjob_executed: false,
-                // executedAt: 
+                // isProcessed: false,
+                // processedAt: 
             } as ShopifyOrder);
             await createdOrder.save();
         } catch (error) {
@@ -159,6 +166,7 @@ export class ShopifyWebhookService {
     private async handleOrderPartialyFulfilled(webhookInfo: {
         shopDomain: string;
         topic: string;
+        hmac: string;
     }, order: any) {
         try {
             // const { id, ...rest } = order;
@@ -170,11 +178,13 @@ export class ShopifyWebhookService {
 
             const createdOrder = new this.orderModel({
                 payload: order,
-                webhookInfo,
+                topic: webhookInfo.topic,
+                shopDomain: webhookInfo.shopDomain,
+                hmacHeaders: webhookInfo.hmac,
                 // quick_drop_x_webhook: {},
                 // quick_drop_x_webhook_response: {},
-                // cronjob_executed: false,
-                // executedAt: 
+                // isProcessed: false,
+                // processedAt: Date
             } as ShopifyOrder);
             await createdOrder.save();
         } catch (error) {
@@ -188,6 +198,7 @@ export class ShopifyWebhookService {
     private async handleOrderCanceled(webhookInfo: {
         shopDomain: string;
         topic: string;
+        hmac: string;
     }, order: any) {
         try {
             // const { id, ...rest } = order;
@@ -199,11 +210,13 @@ export class ShopifyWebhookService {
 
             const createdOrder = new this.orderModel({
                 payload: order,
-                webhookInfo,
+                topic: webhookInfo.topic,
+                shopDomain: webhookInfo.shopDomain,
+                hmacHeaders: webhookInfo.hmac,
                 // quick_drop_x_webhook: {},
                 // quick_drop_x_webhook_response: {},
-                // cronjob_executed: false,
-                // executedAt: 
+                // isProcessed: false,
+                // processedAt: Date
             } as ShopifyOrder);
             await createdOrder.save();
         } catch (error) {
@@ -217,6 +230,7 @@ export class ShopifyWebhookService {
     private async handleOrderUpdated(webhookInfo: {
         shopDomain: string;
         topic: string;
+        hmac: string;
     }, order: any) {
         try {
             // const { id, ...rest } = order;
@@ -228,11 +242,13 @@ export class ShopifyWebhookService {
 
             const createdOrder = new this.orderModel({
                 payload: order,
-                webhookInfo,
+                topic: webhookInfo.topic,
+                shopDomain: webhookInfo.shopDomain,
+                hmacHeaders: webhookInfo.hmac,
                 // quick_drop_x_webhook: {},
                 // quick_drop_x_webhook_response: {},
-                // cronjob_executed: false,
-                // executedAt: 
+                // isProcessed: false,
+                // processedAt: Date
             } as ShopifyOrder);
             await createdOrder.save();
         } catch (error) {
@@ -246,26 +262,15 @@ export class ShopifyWebhookService {
     private async handleRefundCreated(webhookInfo: {
         shopDomain: string;
         topic: string;
+        hmac: string;
     }, order: any) {
         console.log('handleRefundCreated', webhookInfo, order);
-        // try {
-        //     // Example: save to DB, dispatch job, etc.
-        //     const createdOrder = new this.orderModel({
-        //         ...order,
-        //         webhookInfo,
-        //     } as ShopifyOrder);
-        //     await createdOrder.save();
-        // } catch (error) {
-        //     throw new HttpException(
-        //         `Failed to save order webhook: ${error.message}`,
-        //         HttpStatus.INTERNAL_SERVER_ERROR
-        //     );
-        // }
     }
 
     private async handleOrderFulfilled(webhookInfo: {
         shopDomain: string;
         topic: string;
+        hmac: string;
     }, order: any) {
         try {
             // const { id, ...rest } = order;
@@ -277,11 +282,13 @@ export class ShopifyWebhookService {
 
             const createdOrder = new this.orderModel({
                 payload: order,
-                webhookInfo,
+                topic: webhookInfo.topic,
+                shopDomain: webhookInfo.shopDomain,
+                hmacHeaders: webhookInfo.hmac,
                 // quick_drop_x_webhook: {},
                 // quick_drop_x_webhook_response: {},
-                // cronjob_executed: false,
-                // executedAt: 
+                // isProcessed: false,
+                // processedAt: Date
             } as ShopifyOrder);
             await createdOrder.save();
         } catch (error) {
@@ -295,6 +302,7 @@ export class ShopifyWebhookService {
     private async handleCustomerCreated(webhookInfo: {
         shopDomain: string;
         topic: string;
+        hmac: string;
     }, order: any) {
         console.log('handleCustomerCreated', webhookInfo, order);
         // Update fulfillment status, notify logistics, etc.
@@ -303,6 +311,7 @@ export class ShopifyWebhookService {
     private async handleCustomerUpdated(webhookInfo: {
         shopDomain: string;
         topic: string;
+        hmac: string;
     }, order: any) {
         console.log('handleCustomerUpdated', webhookInfo, order);
         // Update fulfillment status, notify logistics, etc.
@@ -311,6 +320,7 @@ export class ShopifyWebhookService {
     private async handleCustomerDeleted(webhookInfo: {
         shopDomain: string;
         topic: string;
+        hmac: string;
     }, order: any) {
         console.log('handleCustomerDeleted', webhookInfo, order);
         // Update fulfillment status, notify logistics, etc.
@@ -319,6 +329,7 @@ export class ShopifyWebhookService {
     private async handleCustomerRedact(webhookInfo: {
         shopDomain: string;
         topic: string;
+        hmac: string;
     }, order: any) {
         console.log('handleCustomerRedact', webhookInfo, order);
         // Update fulfillment status, notify logistics, etc.
@@ -327,6 +338,7 @@ export class ShopifyWebhookService {
     private async handleCustomerDataRequest(webhookInfo: {
         shopDomain: string;
         topic: string;
+        hmac: string;
     }, order: any) {
         console.log('handleCustomerDataRequest', webhookInfo, order);
         // Update fulfillment status, notify logistics, etc.

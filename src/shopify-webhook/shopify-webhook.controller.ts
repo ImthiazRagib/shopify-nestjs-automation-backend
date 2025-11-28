@@ -8,6 +8,7 @@ import {
     HttpCode,
     HttpStatus,
     HttpException,
+    UnauthorizedException,
 } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { ShopifyWebhookService } from './shopify-webhook.service';
@@ -21,15 +22,11 @@ export class ShopifyWebhookController {
     @Post()
     @HttpCode(HttpStatus.OK) // Shopify expects 200 if accepted
     async handleWebhook(
-        @Req() req: Request,
-        // @Res() res: Response,
-        @Headers('x-shopify-hmac-sha256') hmacHeader: string,
+        @Req() req: any,
+        @Headers('x-shopify-hmac-sha256') hmac: string,
         @Headers('x-shopify-topic') topic: string,
         @Headers('x-shopify-shop-domain') shopDomain: string,
     ) {
-        console.log("🚀 ~ ShopifyWebhookController ~ handleWebhook ~ req:", req.body)
-        console.log("🚀 ~ ShopifyWebhookController ~ handleWebhook ~ shopDomain:", { shopDomain, topic, hmacHeader })
-
         try {
             const secret = process.env.CLIENT_SECRET;
             if (!secret) {
@@ -37,36 +34,31 @@ export class ShopifyWebhookController {
                 throw new HttpException('Internal Server Error', HttpStatus.INTERNAL_SERVER_ERROR);
             }
 
-            // const rawBody = (req as any).body; // because of bodyParser.raw
-            // const digest = crypto
+            // Raw body from bodyParser
+            // const rawBody = req.rawBody;
+
+            // const generatedHash = crypto
             //     .createHmac('sha256', secret)
-            //     .update(rawBody, 'utf8')
+            //     .update(rawBody)            // NOT JSON.stringify(...)
             //     .digest('base64');
-            // console.log("🚀 ~ ShopifyWebhookController ~ handleWebhook ~ digest:", digest)
 
-            // // Protect against timing attacks
-            // const safeCompare =
-            //     hmacHeader &&
-            //     crypto.timingSafeEqual(
-            //         Buffer.from(digest, 'utf8'),
-            //         Buffer.from(hmacHeader, 'utf8'),
-            //     );
-            // console.log("🚀 ~ ShopifyWebhookController ~ handleWebhook ~ safeCompare:", safeCompare)
+            // console.log("Generated:", generatedHash);
+            // console.log("Shopify Sent:", hmac);
+            // console.log("Shopify bool:", hmac === generatedHash);
+            // const isValid = crypto.timingSafeEqual(
+            //     Buffer.from(generatedHash, 'utf8'),
+            //     Buffer.from(hmac, 'utf8'),
+            // );
 
-            // if (!safeCompare) {
-            //     console.warn('Invalid Shopify webhook signature');
-            //     throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+            // if (!isValid) {
+            //     throw new UnauthorizedException('Invalid HMAC');
             // }
-
-            // Parse JSON *after* HMAC verification
-            // const payload = JSON.parse(rawBody.toString('utf8'));
-
-            // Optionally filter just order webhooks (orders/create, orders/paid, etc.)
 
             await this.shopifyWebhookService.processWebhook({
                 webhookInfo: {
                     topic,
                     shopDomain,
+                    hmac
                 },
                 payload: req.body,
             });

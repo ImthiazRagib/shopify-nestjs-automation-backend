@@ -5,17 +5,30 @@ import { AllExceptionsFilter } from './exceptions/all-exceptions.filter';
 import { ValidationPipe } from '@nestjs/common';
 import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import bodyParser from 'body-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    rawBody: true,
     logger: ['log', 'error', 'warn', 'debug', 'verbose'],
   });
 
-  // 👇 Set EJS as the view engine
-  app.setViewEngine('ejs');
+  // Important: Shopify requires raw body
+  app.use(
+    '/webhooks/shopify',
+    bodyParser.raw({ type: '*/*' }),
+  );
 
-  // 👇 Set the views directory
-  app.setBaseViewsDir(join(__dirname, '..', 'views'));
+  // Important: Capture raw body for Shopify HMAC validation
+  app.use(
+    bodyParser.json({
+      verify: (req: any, res, buf) => {
+        req.rawBody = buf; // Store raw buffer for later use
+      },
+    }),
+    
+  );
+
 
   // 👇 Set global prefix
   app.setGlobalPrefix('api');
@@ -50,7 +63,7 @@ async function bootstrap() {
       transform: true, // transforms payloads to DTO classes
     }),
   );
-const port = process.env.PORT ?? 3001;
+  const port = process.env.PORT ?? 3001;
   await app.listen(port, () => {
     console.log(`🚀 Server listening on port ${port}`);
   });

@@ -10,8 +10,14 @@ export class ShopifyOrder {
     @Prop({ type: Object })
     payload: Record<string, any>;
 
-    @Prop({ type: Object })
-    webhookInfo: Record<string, any>;
+    @Prop()
+    topic: string;
+
+    @Prop()
+    shopDomain: string;
+
+    @Prop()
+    hmacHeaders?: string;
 
     @Prop({ type: Object })
     quick_drop_x_webhook?: Record<string, any>;
@@ -20,10 +26,10 @@ export class ShopifyOrder {
     quick_drop_x_webhook_response?: Record<string, any>;
 
     @Prop({ default: false })
-    cronjob_executed?: boolean;
+    isProcessed?: boolean;
 
     @Prop({ type: Date })
-    executedAt?: Date;
+    processedAt?: Date;
 }
 
 export const ShopifyOrderSchema = SchemaFactory.createForClass(ShopifyOrder);
