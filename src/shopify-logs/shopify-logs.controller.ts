@@ -1,4 +1,4 @@
 import { Controller } from '@nestjs/common';
 
-@Controller('shopify-logs')
+@Controller('logs/shopify')
 export class ShopifyLogsController {}

@@ -10,6 +10,7 @@ import { ShopifyOrder, ShopifyOrderSchema } from './models/order.webhook.model';
     schema: ShopifyOrderSchema
   }])],
   providers: [ShopifyWebhookService],
-  controllers: [ShopifyWebhookController]
+  controllers: [ShopifyWebhookController],
+  exports: [ShopifyWebhookService]
 })
-export class ShopifyWebhookModule {}
+export class ShopifyWebhookModule { }

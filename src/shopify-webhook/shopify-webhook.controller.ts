@@ -3,12 +3,10 @@ import {
     Controller,
     Post,
     Req,
-    Res,
     Headers,
     HttpCode,
     HttpStatus,
     HttpException,
-    UnauthorizedException,
 } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { ShopifyWebhookService } from './shopify-webhook.service';
@@ -27,6 +25,7 @@ export class ShopifyWebhookController {
         @Headers('x-shopify-topic') topic: string,
         @Headers('x-shopify-shop-domain') shopDomain: string,
     ) {
+
         try {
             const secret = process.env.CLIENT_SECRET;
             if (!secret) {

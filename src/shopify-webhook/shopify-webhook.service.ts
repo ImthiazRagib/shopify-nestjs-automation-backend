@@ -1,6 +1,6 @@
 // shopify-webhook.service.ts
 import { HttpService } from '@nestjs/axios';
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { CUSTOMER_WEBHOOKS, ORDER_WEBHOOKS } from './enums/webhooks.enum';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -17,6 +17,7 @@ interface ShopifyWebhookContext {
 
 @Injectable()
 export class ShopifyWebhookService {
+    private readonly logger = new Logger(ShopifyWebhookService.name)
     constructor(
         @InjectModel(ShopifyOrder.name) private readonly orderModel: Model<ShopifyOrderDocument>,
         // @InjectModel('Customer') private readonly customerModel: Model<CustomerDocument>,
@@ -25,6 +26,7 @@ export class ShopifyWebhookService {
     async processWebhook(ctx: ShopifyWebhookContext): Promise<void> {
         const { webhookInfo, payload } = ctx;
         const { topic } = webhookInfo
+        this.logger.log(`Shopify webhook for ${topic} is running.`);
 
         switch (topic) {
             case ORDER_WEBHOOKS.ORDER_CREATED:
@@ -123,6 +125,7 @@ export class ShopifyWebhookService {
                 // processedAt: 
             } as ShopifyOrder);
             await createdOrder.save();
+            this.logger.log(`Order created webhook saved successfully.`);
         } catch (error) {
             throw new HttpException(
                 `Failed to save order webhook: ${error.message}`,
@@ -155,6 +158,7 @@ export class ShopifyWebhookService {
                 // processedAt: 
             } as ShopifyOrder);
             await createdOrder.save();
+            this.logger.log(`Order paid webhook saved successfully.`);
         } catch (error) {
             throw new HttpException(
                 `Failed to save order webhook: ${error.message}`,
@@ -187,6 +191,7 @@ export class ShopifyWebhookService {
                 // processedAt: Date
             } as ShopifyOrder);
             await createdOrder.save();
+            this.logger.log(`Order partially fulfilled webhook saved successfully.`);
         } catch (error) {
             throw new HttpException(
                 `Failed to save order webhook: ${error.message}`,
@@ -219,6 +224,7 @@ export class ShopifyWebhookService {
                 // processedAt: Date
             } as ShopifyOrder);
             await createdOrder.save();
+
         } catch (error) {
             throw new HttpException(
                 `Failed to save order webhook: ${error.message}`,
@@ -251,6 +257,7 @@ export class ShopifyWebhookService {
                 // processedAt: Date
             } as ShopifyOrder);
             await createdOrder.save();
+            this.logger.log(`Order updated webhook saved successfully.`);
         } catch (error) {
             throw new HttpException(
                 `Failed to save order webhook: ${error.message}`,
@@ -291,6 +298,7 @@ export class ShopifyWebhookService {
                 // processedAt: Date
             } as ShopifyOrder);
             await createdOrder.save();
+            this.logger.log(`Order fulfilled webhook saved successfully.`);
         } catch (error) {
             throw new HttpException(
                 `Failed to save order webhook: ${error.message}`,
