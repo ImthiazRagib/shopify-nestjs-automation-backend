@@ -28,18 +28,18 @@ export class ShopifyCronJobService {
         console.log("🚀 ~ ShopifyCronJobService ~ sendOrderToExternalAPI ~ order:", payload)
         const marked = await this.markOrderProcessed(payload._id);
         console.log("🚀 ~ ShopifyCronJobService ~ sendOrderToExternalAPI ~ marked:", marked)
-        try {
-            const url = ``;
-            const response = await lastValueFrom(
-                this.httpService.post(url, payload),
-            );
-            await this.markOrderProcessed(payload._id);
-            // this.logger.log(`Order ${order.payload.id} sent successfully`);
-            return response.data;
-        } catch (err) {
-            this.logger.error(`Failed to send order ${payload._id}: ${err.message}`);
-            // optionally store failed attempts
-            return null;
-        }
+        // try {
+        //     const url = ``;
+        //     const response = await lastValueFrom(
+        //         this.httpService.post(url, payload),
+        //     );
+        //     await this.markOrderProcessed(payload._id);
+        //     // this.logger.log(`Order ${order.payload.id} sent successfully`);
+        //     return response.data;
+        // } catch (err) {
+        //     this.logger.error(`Failed to send order ${payload._id}: ${err.message}`);
+        //     // optionally store failed attempts
+        //     return null;
+        // }
     }
 }
