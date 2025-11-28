@@ -58,6 +58,10 @@ definitions:
             SHOPIFY_FRONTEND_URL="$SHOPIFY_FRONTEND_URL"
             SHOPIFY_ADMIN_ACCESS_TOKEN="$SHOPIFY_ADMIN_ACCESS_TOKEN"
             SHOPIFY_API_VERSION="$SHOPIFY_API_VERSION"
+            AWS_REGION="$AWS_REGION"
+            AWS_S3_BUCKET="$AWS_S3_BUCKET"
+            AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"
+            AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
             set -euo pipefail
             echo "📦 Starting deployment for: \${DOCKER_ENV}"
             sudo mkdir -p /opt/\${APP_NAME}/\${DOCKER_ENV}

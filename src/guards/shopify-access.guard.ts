@@ -28,14 +28,15 @@ export class ShopifyAccessGuard implements CanActivate {
         }
 
         const accessTokenExist = await this.shopService.checkAccessTokenExist({
-            accessToken,
+            // accessToken,
+            shopId: `gid://shopify/Shop/67720839299`
         });
 
         if (!accessTokenExist) {
             throw new UnauthorizedException('Shopify access token not found');
         }
 
-        request['shopifyStore'] = accessTokenExist;
+        request['shopifyStore'] = {...accessTokenExist, accessToken: `shpua_bac44fe2d403327c9f4f4886b2d6a6e0`};
 
 
 

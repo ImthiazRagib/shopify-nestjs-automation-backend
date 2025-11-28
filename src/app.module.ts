@@ -10,6 +10,10 @@ import { ShopifyOAuthModule } from './shopify-o-auth/shopify-o-auth.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ShopModule } from './shopify/shop/shop.module';
 import { AwsS3Module } from './s3-bucket/s3-bucket.module';
+import { ShopifyWebhookModule } from './shopify-webhook/shopify-webhook.module';
+import { ShopifyLogsModule } from './shopify-logs/shopify-logs.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { ShopifyCronJobModule } from './shopify-cron-job/shopify-cron-job.module';
 
 @Module({
   imports: [    // Load .env globally
@@ -23,10 +27,14 @@ import { AwsS3Module } from './s3-bucket/s3-bucket.module';
       }),
       inject: [ConfigService],
     }),
+    ScheduleModule.forRoot({}),
     ShopifyModule,
     AuthModule,
     ShopifyOAuthModule,
     AwsS3Module,
+    ShopifyWebhookModule,
+    ShopifyLogsModule,
+    ShopifyCronJobModule
     // ShopifyPartnerModule,
     // ShopifyStorefrontModule,
   ],

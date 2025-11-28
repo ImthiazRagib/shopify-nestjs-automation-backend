@@ -4,10 +4,12 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreateOrderDto, GetOrdersDto, QueryShopDto, QueryShopProductDto } from './dto/shop.v1.dto';
 import { ShopifyStore } from './models/shopify-shop.model';
+import { lastValueFrom } from 'rxjs';
 
 @Injectable()
 export class ShopService {
     private version = process.env.SHOPIFY_API_VERSION;
+    private webhookAddress = process.env.WEBHOOK_ADDRESS
 
     constructor(
         private readonly httpService: HttpService,
@@ -16,11 +18,15 @@ export class ShopService {
     }
 
     async checkAccessTokenExist(payload: {
-        accessToken: string;
+        accessToken?: string;
+        shopId?: string
     }) {
         try {
             const shop = await this.storeModel.findOne({
-                accessToken: payload.accessToken,
+                $or: [
+                    { accessToken: payload.accessToken },
+                    { shopId: payload.shopId },
+                ],
             }).exec();
 
             if (!shop) {
@@ -820,7 +826,7 @@ export class ShopService {
             {
                 shopId: query.shopId,
                 accessToken,
-                endpoint: 'shop.json',
+                endpoint: '/shop.json',
             }
         )
         return shopInfo;
@@ -836,6 +842,103 @@ export class ShopService {
             }
         )
         return locations;
+    }
+
+    async registerWebhook(topic: string, shopId: string, accessToken: string): Promise<any> {
+        try {
+            const {
+                shopUrl,
+            } = await this.getShopifyStoreUrl({ shopId: shopId, accessToken: accessToken });
+
+            const url = `${shopUrl}/webhooks.json`;
+
+            const data = {
+                webhook: {
+                    topic,
+                    address: this.webhookAddress,
+                    format: 'json',
+                },
+            };
+
+            const response = await this.httpService.axiosRef.post(url, data, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Shopify-Access-Token': accessToken,
+                },
+            });
+
+            return response?.data;
+        } catch (error) {
+            console.error('Failed to register Shopify webhook:', error?.response.data || error);
+            throw new HttpException(
+                error?.response.data || 'Webhook registration failed',
+                error?.response?.status || HttpStatus.BAD_REQUEST,
+            );
+        }
+    }
+
+    async updateRegisteredWebhooks(webhookId: string, shopId: string, accessToken: string): Promise<any> {
+        try {
+            const {
+                shopUrl,
+            } = await this.getShopifyStoreUrl({ shopId: shopId, accessToken: accessToken });
+
+            const url = `${shopUrl}/webhooks/${webhookId}.json`;
+
+            const observable = this.httpService.put(
+                url,
+                {
+                    webhook: {
+                        id: webhookId,
+                        address: this.webhookAddress,
+                    },
+                },
+                {
+                    headers: {
+                        'X-Shopify-Access-Token': accessToken,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                },
+            );
+
+            const response = await lastValueFrom(observable);
+            return {
+                status: 'success',
+                data: response.data,
+            };
+        } catch (error) {
+            console.error('Failed to test Shopify webhook:', error?.response.data || error);
+            throw new HttpException(
+                error?.response.data || 'Webhook test failed',
+                error?.response?.status || HttpStatus.BAD_REQUEST,
+            );
+        }
+    }
+
+    async getRegisteredWebhook(shopId: string, accessToken: string): Promise<any> {
+        try {
+            const {
+                shopUrl,
+            } = await this.getShopifyStoreUrl({ shopId: shopId, accessToken: accessToken });
+
+            const url = `${shopUrl}/webhooks.json`;
+
+            const response = await this.httpService.axiosRef.get(url, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Shopify-Access-Token': accessToken,
+                },
+            });
+
+            return response;
+        } catch (error) {
+            console.error('Failed to update registered Shopify webhook:', error?.response.data || error);
+            throw new HttpException(
+                error?.response?.data || 'Webhook update failed',
+                error?.response?.status || HttpStatus.BAD_REQUEST,
+            );
+        }
     }
 
     /**

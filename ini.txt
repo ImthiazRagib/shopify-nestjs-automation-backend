@@ -1,0 +1,21 @@
+# APPLICATION ENV'S
+NODE_ENV=prod
+CLIENT_ID=
+CLIENT_SECRET=
+# CLIENT_ID=
+# CLIENT_SECRET=
+REDIRECT_URI=https://dev.shopify.test-api.codeinprogress.net/api/shopify-o-auth/callback
+LOCAL_REDIRECT_URI=https://florida-unhabituated-gruntingly.ngrok-free.dev/api/shopify-o-auth/callback
+APP_SCOPES=read_products,write_products,read_orders,write_orders
+CONTENT_TYPE=application/json
+SHOPIFY_STOREFRONT_DOMAIN=quickdropx-2.myshopify.com
+SHOPIFY_FRONTEND_URL=https://florida-unhabituated-gruntingly.ngrok-free.dev
+SHOPIFY_API_VERSION=2025-10
+APP_HANDLE=rgb-list
+
+DATABASE_URL=
+
+AWS_REGION=
+AWS_S3_BUCKET=
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
