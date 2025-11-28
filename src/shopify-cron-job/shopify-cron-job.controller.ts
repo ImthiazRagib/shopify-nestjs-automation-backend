@@ -25,9 +25,5 @@ export class ShopifyCronJobController {
         this.logger.log('Order processing cron job completed');
     }
 
-    // @Post()
-    // async triggerCron() {
-    //     await this.handleCron();
-    //     return { success: true, message: 'Cron job executed manually' };
-    // }
+x
 }

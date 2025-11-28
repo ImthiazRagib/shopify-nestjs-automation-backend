@@ -1,10 +1,11 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 export type ShopifyOrderDocument = ShopifyOrder & Document;
 
 @Schema({ timestamps: true, collection: 'shopify_orders' })
 export class ShopifyOrder {
+    _id: Types.ObjectId;   // 🔥 Add this line
 
     // Store complete raw payload
     @Prop({ type: Object })
